@@ -5,43 +5,69 @@ uniform sampler2D uTextCanvas;
 uniform vec2 uResolution;
 uniform float uTime;
 
-#define PI 3.14
-#define TWO_PI 6.28
+#define S(a, b, t) smoothstep(a, b, t)
+#define sat(x) clamp(x, 0.0, 1.0);
 
-mat2 rotate2d(float _angle){
-    return mat2(cos(_angle),-sin(_angle),
-                sin(_angle),cos(_angle));
+float remap01(float a, float b, float t) {
+    return sat((t-a)/(b-a));
 }
 
-float circle(vec2 uv, float radius, float width)
-{
-    return smoothstep(width, width * 0.5, abs(radius - length(uv)));
+float remap(float a, float b, float c, float d, float t) {
+    return sat(((t-a)/(b-a)) * (d-c) + c);
 }
 
-float circularSector(vec2 uv, float radius, float width, float cutAngle)
-{
-    float angle = atan(uv.y, uv.x) + PI;
-    float circ = circle(uv, radius, width);
-    
-    float cutBasis = abs(angle - cutAngle);
-    float cutVal = smoothstep(cutAngle, cutAngle - 0.2, cutBasis);
-    return circ * cutVal;
+vec4 Eye(vec2 uv) {
+    vec4 col = vec4(0.0);
+
+    return col;
+}
+
+vec4 Mouth(vec2 uv) {
+    vec4 col = vec4(0.0);
+
+    return col;
+}
+
+vec4 Head(vec2 uv) {
+    vec4 col = vec4(.9, .65, .1, 1.);
+
+    float d = length(uv);
+
+    col.a = S(.5, .49, d);
+
+    float edgeShade = remap01(0.35, 0.5, d);
+    edgeShade *= edgeShade;
+    col.rgb *= 1.0 - edgeShade * 0.5;
+
+    col.rgb = mix(col.rgb, vec3(.6,.3,.1), S(0.47, 0.48, d));
+
+    float highlight = S(.4, .39, d);
+    highlight *= remap(.4, -0.1, .75, 0.0, uv.y);
+    col.rgb = mix(col.rgb, vec3(1.0), highlight);
+
+    d = length(uv - vec2(0.25, -0.2));
+    float cheek = S(0.2, 0.01, d) * .4;
+    cheek *= S(0.18, 0.16, d);
+    col.rgb = mix(col.rgb, vec3(1.0, 0.1, 0.1), cheek);
+
+    return col;
+}
+
+vec4 Smiley(vec2 uv) {
+    vec4 col = vec4(0.0);
+
+    uv.x = abs(uv.x);
+    vec4 head = Head(uv);
+
+    col = mix(col, head, head.a);
+
+    return col;
 }
 
 void main() {
     vec2 uv = gl_FragCoord.xy / uResolution.xy;
-    vec2 st = uv;
-    st = st * 2.0 - 1.0;
+    uv -= 0.5;
+    uv.x *= uResolution.x/uResolution.y;
     
-    vec3 color = vec3(0.0);
-    float c = 0.0;
-    
-    
-    for(int i = 0; i < 50; i++) {
-    	c += circularSector(st, 0.05 * float(i), 0.02, mod(PI * 0.1 * float(i), PI));    
-    }
-    
-    color = mix(color, vec3(1.0), c);
-    
-	gl_FragColor = vec4(color,1.0);
+	gl_FragColor = Smiley(uv);
 }

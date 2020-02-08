@@ -123,7 +123,7 @@ export default class WebGLView {
       this.mouse.x = clientX; //(clientX / this.width) * 2 - 1;
       this.mouse.y = clientY; //-(clientY / this.height) * 2 + 1;
 
-      this.mouseCanvas.addTouch(this.mouse);
+      // this.mouseCanvas.addTouch(this.mouse);
     });
   }
 
