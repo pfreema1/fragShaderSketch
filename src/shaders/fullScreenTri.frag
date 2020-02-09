@@ -47,11 +47,21 @@ vec4 Eye(vec2 uv) {
 }
 
 vec4 Mouth(vec2 uv) {
-    // uv -= 0.5;
+    uv -= 0.5;
     vec4 col = vec4(0.5, 0.18, 0.05, 1.0);
 
+    uv.y *= 1.5;
+    uv.y -= uv.x * uv.x * 2.0;
 
-    col.a = S(1.0, 0.9, uv.x) * S(1.0, 0.9, uv.y);
+    float d = length(uv);
+
+    col.a = S(0.5, 0.48, d);
+
+    float td = length(uv - vec2(0.0, 0.6));
+
+    vec3 toothCol = vec3(1.0) * S(0.6, 0.35, d);
+
+    col.rgb = mix(col.rgb, toothCol, S(0.4, 0.37, td));
 
     return col;
 }
