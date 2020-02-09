@@ -16,6 +16,10 @@ float remap(float a, float b, float c, float d, float t) {
     return sat(((t-a)/(b-a)) * (d-c) + c);
 }
 
+vec2 within(vec2 uv, vec4 rect) {
+    return (uv-rect.xy)/(rect.zw-rect.xy);
+}
+
 vec4 Eye(vec2 uv) {
     vec4 col = vec4(0.0);
 
@@ -58,8 +62,10 @@ vec4 Smiley(vec2 uv) {
 
     uv.x = abs(uv.x);
     vec4 head = Head(uv);
+    vec4 eye = Eye(uv);
 
     col = mix(col, head, head.a);
+    col = mix(col, eye, eye.a);
 
     return col;
 }
