@@ -102,4 +102,4 @@ void main() {
     uv.x *= uResolution.x/uResolution.y;
     
 	gl_FragColor = Smiley(uv);
-}
+} 
