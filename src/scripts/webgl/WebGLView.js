@@ -3,16 +3,11 @@ import GLTFLoader from 'three-gltf-loader';
 import glslify from 'glslify';
 import Tweakpane from 'tweakpane';
 import OrbitControls from 'three-orbitcontrols';
-import TweenMax from 'TweenMax';
 import baseDiffuseFrag from '../../shaders/basicDiffuse.frag';
 import basicDiffuseVert from '../../shaders/basicDiffuse.vert';
-import MouseCanvas from '../MouseCanvas';
-import TextCanvas from '../TextCanvas';
 import RenderTri from '../RenderTri';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { BloomPass } from 'three/examples/jsm/postprocessing/BloomPass.js';
-import { FilmPass } from 'three/examples/jsm/postprocessing/FilmPass.js';
 import { debounce } from '../utils/debounce';
 
 export default class WebGLView {
@@ -31,9 +26,7 @@ export default class WebGLView {
     // this.initLights();
     // this.initTweakPane();
     // await this.loadTestMesh();
-    // this.setupTextCanvas();
     this.initMouseMoveListen();
-    // this.initMouseCanvas();
     this.initRenderTri();
     // this.initPostProcessing();
     this.initResizeHandler();
@@ -60,15 +53,7 @@ export default class WebGLView {
         this.bgCamera.aspect = this.width / this.height;
         this.bgCamera.updateProjectionMatrix();
 
-        // text canvas
-        this.textCanvas.canvas.width = this.width;
-        this.textCanvas.canvas.height = this.height;
-        this.setupTextCanvas();
-        this.renderTri.triMaterial.uniforms.uTextCanvas.value = this.textCanvas.texture;
 
-        // mouse canvas
-        this.mouseCanvas.canvas.width = this.width;
-        this.mouseCanvas.canvas.height = this.height;
 
         // composer
         this.composer.setSize(this.width, this.height);
@@ -107,7 +92,7 @@ export default class WebGLView {
         min: 0.0,
         max: 0.5
       })
-      .on('change', value => {});
+      .on('change', value => { });
   }
 
   initMouseCanvas() {
@@ -136,10 +121,6 @@ export default class WebGLView {
     this.renderer.autoClear = true;
 
     this.clock = new THREE.Clock();
-  }
-
-  setupTextCanvas() {
-    this.textCanvas = new TextCanvas(this);
   }
 
   loadTestMesh() {
@@ -182,9 +163,7 @@ export default class WebGLView {
     this.renderTri = new RenderTri(
       this.scene,
       this.renderer,
-      this.bgRenderTarget,
-      this.mouseCanvas,
-      this.textCanvas
+      this.bgRenderTarget
     );
   }
 
@@ -235,11 +214,6 @@ export default class WebGLView {
     this.testMeshMaterial.uniforms.u_time.value = time;
   }
 
-  updateTextCanvas(time) {
-    this.textCanvas.textLine.update(time);
-    this.textCanvas.textLine.draw(time);
-    this.textCanvas.texture.needsUpdate = true;
-  }
 
   update() {
     const delta = this.clock.getDelta();
@@ -248,20 +222,13 @@ export default class WebGLView {
     this.controls.update();
 
     if (this.renderTri) {
-      this.renderTri.triMaterial.uniforms.uTime.value = time;
+      this.renderTri.triMaterial.uniforms.iTime.value = time;
     }
 
     if (this.testMesh) {
       this.updateTestMesh(time);
     }
 
-    if (this.mouseCanvas) {
-      this.mouseCanvas.update();
-    }
-
-    if (this.textCanvas) {
-      this.updateTextCanvas(time);
-    }
 
     if (this.trackball) this.trackball.update();
   }
