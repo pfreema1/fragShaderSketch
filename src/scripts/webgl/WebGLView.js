@@ -24,7 +24,7 @@ export default class WebGLView {
     this.initThree();
     this.initBgScene();
     // this.initLights();
-    // this.initTweakPane();
+    this.initTweakPane();
     // await this.loadTestMesh();
     this.initMouseMoveListen();
     this.initRenderTri();
@@ -87,12 +87,12 @@ export default class WebGLView {
   initTweakPane() {
     this.pane = new Tweakpane();
 
-    this.pane
-      .addInput(this.PARAMS, 'rotSpeed', {
-        min: 0.0,
-        max: 0.5
-      })
-      .on('change', value => { });
+    // this.pane
+    //   .addInput(this.PARAMS, 'rotSpeed', {
+    //     min: 0.0,
+    //     max: 0.5
+    //   })
+    //   .on('change', value => { });
   }
 
   initMouseCanvas() {
@@ -163,7 +163,9 @@ export default class WebGLView {
     this.renderTri = new RenderTri(
       this.scene,
       this.renderer,
-      this.bgRenderTarget
+      this.bgRenderTarget,
+      this.pane,
+      this.PARAMS
     );
   }
 

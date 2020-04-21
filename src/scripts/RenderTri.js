@@ -6,10 +6,12 @@ import fullScreenTriFrag from './../shaders/fullScreenTri.frag';
 import fullScreenTriVert from './../shaders/fullScreenTri.vert';
 
 export default class RenderTri {
-  constructor(scene, renderer, bgRenderTarget) {
+  constructor(scene, renderer, bgRenderTarget, pane, PARAMS) {
     this.scene = scene;
     this.renderer = renderer;
     this.bgRenderTarget = bgRenderTarget;
+    this.pane = pane;
+    this.PARAMS = PARAMS;
 
     const resolution = new THREE.Vector2();
     this.renderer.getDrawingBufferSize(resolution);
@@ -35,6 +37,9 @@ export default class RenderTri {
         iResolution: { value: resolution },
         iTime: {
           value: 0.0
+        },
+        mod1: {
+          value: 1.0
         }
       }
     });
@@ -46,6 +51,19 @@ export default class RenderTri {
     renderTri.frustumCulled = false;
 
     this.scene.add(renderTri);
+
+    this.addGUI();
+  }
+
+  addGUI() {
+    this.PARAMS.mod1 = 1.0;
+
+    this.pane.addInput(this.PARAMS, 'mod1', {
+      min: 0.0,
+      max: 1.0
+    }).on('change', value => {
+      this.triMaterial.uniforms.mod1.value = value;
+    })
   }
 
   returnRenderTriGeometry() {
