@@ -8,12 +8,12 @@ uniform float iTime;
 #define sat(x) clamp(x, 0., 1.)
 #define PI 3.14159
 #define TAU 2.0 * PI
-#define gridThickness 0.01
+#define gridThickness 0.005
 
 vec3 headColor = vec3(0.45,0.21,0.67);
 vec3 bgColor = vec3(0.55,0.82,0.87);
 vec3 headGooColor = vec3(0.87,0.56,0.40);
-vec3 blackOutlineColor = vec3(0.14,0.09,0.14);
+vec3 blackOutlineColor = vec3(0.09,0.08,0.16);
 vec3 gearCol1 = vec3(0.44,0.48,0.80);
 vec3 gearCol2 = vec3(0.36,0.83,0.99);
 vec3 col = bgColor;
@@ -101,10 +101,24 @@ float opSmoothSubtraction( float d1, float d2, float k ) {
 **********************************************************
 **********************************************************
 **********************************************************/
+
+
 void eye(in vec2 p, inout vec3 col) { 
+    // eye lash black bottom
+    float r = 0.06;
+  	float d = sdSegment(p, vec2(0.5, 0.5), vec2(0.5, 1.04)) - r;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    // eye lash color
+    r = 0.045;
+  	d = sdSegment(p, vec2(0.5, 0.5), vec2(0.5, 1.04)) - r;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, vec3(0.90,0.76,0.34), 1.0 - d);
+
     // bottom outline
-    float r = 0.4;
-  	float d = sdSegment(p, vec2(0.5, 0.5), vec2(0.5, 0.6)) - r;
+    r = 0.4;
+  	d = sdSegment(p, vec2(0.5, 0.5), vec2(0.5, 0.6)) - r;
     d = smoothstep(0.0, AA, d);
     col = mix(col, blackOutlineColor, 1.0 - d);
 
@@ -130,8 +144,51 @@ void eye(in vec2 p, inout vec3 col) {
     d = smoothstep(0.0, AA, d);
     mixedCol = mix(vec3(0.55,0.23,0.65), vec3(0.92,0.54,0.37), p.y);
     col = mix(col, mixedCol, 1.0 - d); 
+    
+    ///////////////////////////////////////////////////////////
+    // top gear
+    // black bottom of top gear
+    r = 0.3;
+    d = sdSegment(p, vec2(0.5, 0.59), vec2(0.5, 0.66)) - r;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d); 
 
-    addGrid(p, col);
+    // top gear
+    d = sdCircle(p - vec2(0.5, 0.6), 0.29);
+    d = smoothstep(0.0, AA, d);
+    mixedCol = mix(vec3(0.40,0.70,0.61), vec3(0.87,0.76,0.37), 1.0 - p.x);
+    col = mix(col, mixedCol, 1.0 - d);
+
+    // top gear lines
+    lines = step(0.079, mod((p.x - iTime * 0.03) * 2.0, 0.1));
+    col = mix(col, vec3(0.0), lines * (1.0 - d));
+
+    //black bottom of top colored gear
+    r = 0.3;
+    d = sdSegment(p, vec2(0.5, 0.67), vec2(0.5, 0.67)) - r;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d); 
+
+    r = 0.285;
+    d = sdSegment(p, vec2(0.5, 0.67), vec2(0.5, 0.67)) - r;
+    d = smoothstep(0.0, AA, d);
+    mixedCol = mix(vec3(0.99,0.96,0.86), vec3(0.92,0.81,0.48), p.x);
+    col = mix(col, mixedCol, 1.0 - d); 
+
+    // pupil
+    r = 0.2;
+    d = sdSegment(p, vec2(0.5, 0.67), vec2(0.5, 0.67)) - r;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d); 
+
+    // iris
+    r = 0.05;
+    d = sdSegment(p, vec2(0.5, 0.67), vec2(0.5, 0.67)) - r;
+    d = smoothstep(0.0, AA, d);
+    mixedCol = mix(vec3(0.75,0.76,0.55), vec3(0.48,0.82,0.86), p.x);
+    col = mix(col, mixedCol, 1.0 - d); 
+
+    // addGrid(p, col);
 }
 
 void oldEye(in vec2 p, inout vec3 col) {
