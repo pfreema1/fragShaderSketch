@@ -81,6 +81,36 @@ void addGrid(vec2 p, inout vec3 col) {
     col = mix(col, gridOutlineCol, outline * all);
 }
 
+vec3 returnDottedCol(vec2 p, vec3 bgCol, vec3 dotCol) {
+    vec3 dottedCol = vec3(0.0);
+
+    p *= 28.0;
+    p.x += 0.48;
+    p.y *= 2.49;
+    float yIndex = floor(p.y);
+    float xIndex = floor(p.x);
+    p = fract(p);
+
+    // float circle = smoothstep(mod1, mod2, length(p - vec2(0.5)));
+    // circle *= smoothstep(mod3, mod4, length(p - vec2(1.0, 0.0)));
+
+    float circleBool = 0.0;
+
+    float circle = smoothstep(0.3, 0.6, length(p - vec2(0.5)));
+
+    if(mod(xIndex, 2.0) == 0.0 && mod(yIndex, 2.0) == 0.0) {
+        circleBool = 0.0;
+    } else if(mod(xIndex, 2.0) != 0.0 && mod(yIndex, 2.0) == 0.0) {
+        circleBool = 1.0;
+    } else if(mod(xIndex, 2.0) == 0.0 && mod(yIndex, 2.0) != 0.0) {
+        circleBool = 1.0;
+    }
+
+    dottedCol = mix(bgCol, dotCol, (1.0 - circle) * circleBool);
+
+    return dottedCol;
+}
+
 /*********************************************************
 **********************************************************
 **********************************************************
@@ -480,14 +510,15 @@ void nose(in vec2 p, inout vec3 col) {
     d = opSmoothUnion(d1, d2, 0.14);
     // hourglass colored - middle bend
     modP = vec2(p.x, p.y * 2.0);
-    d3 = sdCircle(modP - vec2(mod1, mod2 * 2.0), mod3);
-    d = opSmoothUnion(d, d3, 0.1);
+    d3 = sdCircle(modP - vec2(0.65, 1.26), 0.01);
+    d = opSmoothUnion(d, d3, 0.16);
     // hourglass colored - top bend
     d1 = sdCircle(modP - vec2(0.85, 1.64), 0.09);
     d = opSmoothUnion(d, d1, 0.11);
     // draw hourglass colored
     d = smoothstep(0.0, AA, d);
-    col = mix(col, vec3(0.90,0.75,0.34), 1.0 - d);
+    vec3 dottedCol = returnDottedCol(p, vec3(0.89,0.76,0.34), vec3(0.81,0.43,0.12));
+    col = mix(col, dottedCol, 1.0 - d);
 
 
     ////////////////////////////////////////////////////
