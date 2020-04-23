@@ -52,6 +52,9 @@ export default class RenderTri {
         },
         mod5: {
           value: 1.0
+        },
+        mod6: {
+          value: 1.0
         }
       }
     });
@@ -73,6 +76,7 @@ export default class RenderTri {
     this.PARAMS.mod3 = 1.0;
     this.PARAMS.mod4 = 1.0;
     this.PARAMS.mod5 = 1.0;
+    this.PARAMS.mod6 = 1.0;
 
     this.pane.addInput(this.PARAMS, 'mod1', {
       min: 0.0,
@@ -107,6 +111,13 @@ export default class RenderTri {
       max: 1.0
     }).on('change', value => {
       this.triMaterial.uniforms.mod5.value = value;
+    });
+
+    this.pane.addInput(this.PARAMS, 'mod6', {
+      min: 0.0,
+      max: 1.0
+    }).on('change', value => {
+      this.triMaterial.uniforms.mod6.value = value;
     });
   }
 

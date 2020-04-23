@@ -6,6 +6,11 @@ uniform float mod2;
 uniform float mod3;
 uniform float mod4;
 uniform float mod5;
+uniform float mod6;
+
+/*
+    This code is ugly and inefficient, just like ur mum.  
+*/
 
 #define AA 0.005
 #define S(a, b, t) smoothstep(a, b, t)
@@ -121,6 +126,20 @@ float sdRoundBox( in vec2 p, in vec2 b, in vec4 r )
     
     vec2 q = abs(p)-b+r.x;
     return min(max(q.x,q.y),0.0) + length(max(q,0.0)) - r.x;
+}
+
+float sdTriangle( in vec2 p, in vec2 p0, in vec2 p1, in vec2 p2 )
+{
+    vec2 e0 = p1-p0, e1 = p2-p1, e2 = p0-p2;
+    vec2 v0 = p -p0, v1 = p -p1, v2 = p -p2;
+    vec2 pq0 = v0 - e0*clamp( dot(v0,e0)/dot(e0,e0), 0.0, 1.0 );
+    vec2 pq1 = v1 - e1*clamp( dot(v1,e1)/dot(e1,e1), 0.0, 1.0 );
+    vec2 pq2 = v2 - e2*clamp( dot(v2,e2)/dot(e2,e2), 0.0, 1.0 );
+    float s = sign( e0.x*e2.y - e0.y*e2.x );
+    vec2 d = min(min(vec2(dot(pq0,pq0), s*(v0.x*e0.y-v0.y*e0.x)),
+                     vec2(dot(pq1,pq1), s*(v1.x*e1.y-v1.y*e1.x))),
+                     vec2(dot(pq2,pq2), s*(v2.x*e2.y-v2.y*e2.x)));
+    return -sqrt(d.x)*sign(d.y);
 }
 
 /*********************************************************
@@ -434,19 +453,55 @@ void nose(in vec2 p, inout vec3 col) {
     float isInside = inside01(p);
     float isInsideY = insideY(p);
     float isInsideX = insideX(p);
+    vec2 modP = vec2(0.0);
+    vec3 mixedCol = vec3(0.0);
+
+    ////////////////////////////////////////////////////////
+    // hourglass black bottom - top triangle
+    float d2 = sdTriangle(p, vec2(0.48, 0.63), vec2(0.48, 0.85), vec2(1.0, 0.85));
+    // hourglass black bottom - bottom triangle
+    float d1 = sdTriangle(p, vec2(0.91, 0.39), vec2(0.52, 0.64), vec2(0.0, 0.41));
+    float d = opSmoothUnion(d1, d2, 0.14);
+    // hourglass black bottom - middle bend
+    modP = vec2(p.x, p.y * 2.0);
+    float d3 = sdCircle(modP - vec2(0.68, 1.26), 0.04);
+    d = opSmoothUnion(d, d3, 0.1);
+    // hourglass black bottom - top bend
+    d1 = sdCircle(modP - vec2(0.85, 1.64), 0.11);
+    d = opSmoothUnion(d, d1, 0.11);
+    // draw hourglass black bottom
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    //////////////////////////////////////////////////////
+    // hourglass colored - top triangle
+    d2 = sdTriangle(p, vec2(0.40, 0.63), vec2(0.47, 0.84), vec2(0.91, 0.84));
+    // hourglass colored - bottom triangle
+    d1 = sdTriangle(p, vec2(0.8645, 0.39), vec2(0.494, 0.64), vec2(0.0, 0.41));
+    d = opSmoothUnion(d1, d2, 0.14);
+    // hourglass colored - middle bend
+    modP = vec2(p.x, p.y * 2.0);
+    d3 = sdCircle(modP - vec2(mod1, mod2 * 2.0), mod3);
+    d = opSmoothUnion(d, d3, 0.1);
+    // hourglass colored - top bend
+    d1 = sdCircle(modP - vec2(0.85, 1.64), 0.09);
+    d = opSmoothUnion(d, d1, 0.11);
+    // draw hourglass colored
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, vec3(0.90,0.75,0.34), 1.0 - d);
 
 
+    ////////////////////////////////////////////////////
     // black bottom
-    vec2 modP = vec2(p.x, p.y * 3.0);
+    modP = vec2(p.x, p.y * 3.0);
     float r = 0.5;
-    float d1 = sdSegment(modP, vec2(0.5, 0.9), vec2(0.5, 0.4)) - r;
+    d1 = sdSegment(modP, vec2(0.5, 0.9), vec2(0.5, 0.4)) - r;
     float subtractR = 0.07;
-    float d2 = sdSegment(p, vec2(0.67, -0.1), vec2(0.5, -0.1)) - subtractR;
+    d2 = sdSegment(p, vec2(0.67, -0.1), vec2(0.5, -0.1)) - subtractR;
 
-    float d3 = opSmoothSubtraction(d2, d1, 0.5);
+    d3 = opSmoothSubtraction(d2, d1, 0.5);
 
     r = 0.05;
-    float d = sdSegment(p, vec2(0.93, 0.1), vec2(0.93, 0.02)) - r;
+    d = sdSegment(p, vec2(0.93, 0.1), vec2(0.93, 0.02)) - r;
     d = opSmoothUnion(d, d3, 0.01);
 
     r = 0.005;
@@ -478,7 +533,7 @@ void nose(in vec2 p, inout vec3 col) {
     r = 0.13;
     vec2 pMod = vec2(p.x * 0.9, p.y * 2.5);
     d = sdSegment(pMod, vec2(0.59, 0.69), vec2(0.59, 0.37)) - r;
-    vec3 mixedCol = mix(vec3(0.40,0.36,0.67), vec3(0.35,0.84,0.99), smoothstep(0.54, 0.85, p.x));
+    mixedCol = mix(vec3(0.40,0.36,0.67), vec3(0.35,0.84,0.99), smoothstep(0.54, 0.85, p.x));
     d = smoothstep(0.0, AA, d);
     col = mix(col, mixedCol, 1.0 - d);
 
@@ -503,7 +558,7 @@ void nose(in vec2 p, inout vec3 col) {
     mixedCol = mix(vec3(0.58,0.28,0.56), vec3(0.90,0.53,0.37), smoothstep(0.09, 0.18, p.y));
     col = mix(col, mixedCol, 1.0 - d);
 
-    // addGrid(p, col);
+    addGrid(p, col);
 
 }
 
