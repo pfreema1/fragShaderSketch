@@ -2,6 +2,10 @@ precision highp float;
 uniform vec2 iResolution;
 uniform float iTime;
 uniform float mod1;
+uniform float mod2;
+uniform float mod3;
+uniform float mod4;
+uniform float mod5;
 
 #define AA 0.005
 #define S(a, b, t) smoothstep(a, b, t)
@@ -43,6 +47,14 @@ vec2 within(vec2 uv, vec4 rect) {
 
 float inside01(vec2 p) {
     return step(0.0, p.x) * (1.0 - step(1.0, p.x)) * step(0.0, p.y) * (1.0 - step(1.0, p.y));
+}
+
+float insideY(vec2 p) {
+    return step(0.0, p.y) * (1.0 - step(1.0, p.y));
+}
+
+float insideX(vec2 p) {
+    return step(0.0, p.x) * (1.0 - step(1.0, p.x));
 }
 
 void addGrid(vec2 p, inout vec3 col) {
@@ -92,11 +104,24 @@ float sdSegment( in vec2 p, in vec2 a, in vec2 b )
 
 float opSmoothUnion( float d1, float d2, float k ) {
     float h = clamp( 0.5 + 0.5*(d2-d1)/k, 0.0, 1.0 );
-    return mix( d2, d1, h ) - k*h*(1.0-h); }
+    return mix( d2, d1, h ) - k*h*(1.0-h); 
+}
 
 float opSmoothSubtraction( float d1, float d2, float k ) {
     float h = clamp( 0.5 - 0.5*(d2+d1)/k, 0.0, 1.0 );
-    return mix( d2, -d1, h ) + k*h*(1.0-h); }
+    return mix( d2, -d1, h ) + k*h*(1.0-h); 
+}
+
+float opSubtraction( float d1, float d2 ) { return max(-d1,d2); }
+
+float sdRoundBox( in vec2 p, in vec2 b, in vec4 r ) 
+{
+    r.xy = (p.x>0.0)?r.xy : r.zw;
+    r.x  = (p.y>0.0)?r.x  : r.y;
+    
+    vec2 q = abs(p)-b+r.x;
+    return min(max(q.x,q.y),0.0) + length(max(q,0.0)) - r.x;
+}
 
 /*********************************************************
 **********************************************************
@@ -126,7 +151,7 @@ void eye(in vec2 p, inout vec3 col) {
     // bottom gear
     d = sdCircle(p - vec2(0.5, 0.51), 0.39);
     d = smoothstep(0.0, AA, d);
-    mixedCol = mix(gearCol1, gearCol2, 1.0 - p.x);
+    mixedCol = mix(gearCol1, gearCol2, smoothstep(0.67, 0.83, p.x));
     col = mix(col, mixedCol, 1.0 - d);
 
     // add lines
@@ -143,7 +168,7 @@ void eye(in vec2 p, inout vec3 col) {
     r = 0.39;
     d = sdSegment(p, vec2(0.5, 0.59), vec2(0.5, 0.61)) - r;
     d = smoothstep(0.0, AA, d);
-    mixedCol = mix(vec3(0.55,0.23,0.65), vec3(0.92,0.54,0.37), p.y);
+    mixedCol = mix(vec3(0.55,0.23,0.65), vec3(0.92,0.54,0.37), smoothstep(0.18, 0.92, p.y));
     col = mix(col, mixedCol, 1.0 - d); 
     
     ///////////////////////////////////////////////////////////
@@ -385,7 +410,7 @@ void mouth(in vec2 p, inout vec3 col) {
     //////////////////////////////////////////////////////////
     // TOP OIL LINE
 
-    loopTime = 4.0;
+    loopTime = 3.0;
     modTime = mod(iTime, loopTime);
     modTime /= loopTime;
     r = 0.04;
@@ -405,6 +430,83 @@ void mouth(in vec2 p, inout vec3 col) {
 
 }
 
+void nose(in vec2 p, inout vec3 col) {
+    float isInside = inside01(p);
+    float isInsideY = insideY(p);
+    float isInsideX = insideX(p);
+
+
+    // black bottom
+    vec2 modP = vec2(p.x, p.y * 3.0);
+    float r = 0.5;
+    float d1 = sdSegment(modP, vec2(0.5, 0.9), vec2(0.5, 0.4)) - r;
+    float subtractR = 0.07;
+    float d2 = sdSegment(p, vec2(0.67, -0.1), vec2(0.5, -0.1)) - subtractR;
+
+    float d3 = opSmoothSubtraction(d2, d1, 0.5);
+
+    r = 0.05;
+    float d = sdSegment(p, vec2(0.93, 0.1), vec2(0.93, 0.02)) - r;
+    d = opSmoothUnion(d, d3, 0.01);
+
+    r = 0.005;
+    d1 = sdSegment(p, vec2(0.7, -0.01), vec2(1.4, -0.01)) - r;
+    float loopTime = 2.0;
+    float modTime = mod(iTime, loopTime) / loopTime;
+    float smoothVal = (abs(sin(modTime * TAU))) * 0.085;
+    d = opSmoothUnion(d, d1, smoothVal * isInsideY);
+
+    // middle bottom pipe
+    r = 0.05;
+    d2 = sdSegment(p, vec2(0.5, 0.1), vec2(0.5, -0.01)) - r;
+    d = opSmoothUnion(d, d2, 0.09);
+
+    // middle bottom pipe connector
+    r = 0.005;
+    d1 = sdSegment(p, vec2(0.4, -0.01), vec2(0.6, -0.01)) - r;
+    loopTime = 2.0;
+    modTime = mod(iTime + 0.5, loopTime) / loopTime;
+    smoothVal = (abs(sin(modTime * TAU)) + 0.07) * 0.1;
+    d = opSmoothUnion(d, d1, smoothVal);
+
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    ///////////////////////////////////////////////////
+    // nose tubes
+
+    r = 0.13;
+    vec2 pMod = vec2(p.x * 0.9, p.y * 2.5);
+    d = sdSegment(pMod, vec2(0.59, 0.69), vec2(0.59, 0.37)) - r;
+    vec3 mixedCol = mix(vec3(0.40,0.36,0.67), vec3(0.35,0.84,0.99), smoothstep(0.54, 0.85, p.x));
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, mixedCol, 1.0 - d);
+
+    // nose tube bottom black
+    d = sdCircle(pMod - vec2(0.59, 0.36), 0.13);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    // nose tube middle black ring
+    loopTime = 2.0;
+    modTime = mod(iTime, loopTime) / loopTime;
+    float m = 0.06 * abs(sin(modTime * TAU)) + 0.54;
+    d = sdCircle(pMod - vec2(0.59, 0.52), 0.14);
+    d2 = sdCircle(pMod - vec2(0.59, m), 0.13);
+    d = opSubtraction(d, d2);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    // nose tube bottom color
+    d = sdCircle(pMod - vec2(0.59, 0.34), 0.12);
+    d = smoothstep(0.0, AA, d);
+    mixedCol = mix(vec3(0.58,0.28,0.56), vec3(0.90,0.53,0.37), smoothstep(0.09, 0.18, p.y));
+    col = mix(col, mixedCol, 1.0 - d);
+
+    // addGrid(p, col);
+
+}
+
 // void mainImage( out vec4 fragColor, in vec2 fragCoord )
 void main()
 {
@@ -420,7 +522,8 @@ void main()
     eye(within(p, vec4(0.1 , -0.25, 0.6, -0.7)), col);
     
     mouth(within(p, vec4(-0.3, -0.75, 0.3, -1.0)), col);
-        
+
+    nose(within(p, vec4(-0.1, -0.2, 0.1, -0.75)), col);        
 
 	// fragColor = vec4(col,1.0);
     gl_FragColor = vec4(col, 1.0);

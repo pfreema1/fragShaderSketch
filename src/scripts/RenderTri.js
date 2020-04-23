@@ -40,6 +40,18 @@ export default class RenderTri {
         },
         mod1: {
           value: 1.0
+        },
+        mod2: {
+          value: 1.0
+        },
+        mod3: {
+          value: 1.0
+        },
+        mod4: {
+          value: 1.0
+        },
+        mod5: {
+          value: 1.0
         }
       }
     });
@@ -57,13 +69,45 @@ export default class RenderTri {
 
   addGUI() {
     this.PARAMS.mod1 = 1.0;
+    this.PARAMS.mod2 = 1.0;
+    this.PARAMS.mod3 = 1.0;
+    this.PARAMS.mod4 = 1.0;
+    this.PARAMS.mod5 = 1.0;
 
     this.pane.addInput(this.PARAMS, 'mod1', {
       min: 0.0,
       max: 1.0
     }).on('change', value => {
       this.triMaterial.uniforms.mod1.value = value;
-    })
+    });
+
+    this.pane.addInput(this.PARAMS, 'mod2', {
+      min: 0.0,
+      max: 1.0
+    }).on('change', value => {
+      this.triMaterial.uniforms.mod2.value = value;
+    });
+
+    this.pane.addInput(this.PARAMS, 'mod3', {
+      min: 0.0,
+      max: 1.0
+    }).on('change', value => {
+      this.triMaterial.uniforms.mod3.value = value;
+    });
+
+    this.pane.addInput(this.PARAMS, 'mod4', {
+      min: 0.0,
+      max: 1.0
+    }).on('change', value => {
+      this.triMaterial.uniforms.mod4.value = value;
+    });
+
+    this.pane.addInput(this.PARAMS, 'mod5', {
+      min: 0.0,
+      max: 1.0
+    }).on('change', value => {
+      this.triMaterial.uniforms.mod5.value = value;
+    });
   }
 
   returnRenderTriGeometry() {
