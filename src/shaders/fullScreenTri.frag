@@ -172,6 +172,23 @@ float sdTriangle( in vec2 p, in vec2 p0, in vec2 p1, in vec2 p2 )
     return -sqrt(d.x)*sign(d.y);
 }
 
+float dot2(in vec2 v ) { return dot(v,v); }
+
+// trapezoid / capped cone, specialized for Y alignment
+float sdTrapezoid( in vec2 p, in float r1, float r2, float he )
+{
+    vec2 k1 = vec2(r2,he);
+    vec2 k2 = vec2(r2-r1,2.0*he);
+
+	p.x = abs(p.x);
+    vec2 ca = vec2(max(0.0,p.x-((p.y<0.0)?r1:r2)), abs(p.y)-he);
+    vec2 cb = p - k1 + k2*clamp( dot(k1-p,k2)/dot2(k2), 0.0, 1.0 );
+    
+    float s = (cb.x < 0.0 && ca.y < 0.0) ? -1.0 : 1.0;
+    
+    return s*sqrt( min(dot2(ca),dot2(cb)) );
+}
+
 /*********************************************************
 **********************************************************
 **********************************************************
@@ -589,8 +606,73 @@ void nose(in vec2 p, inout vec3 col) {
     mixedCol = mix(vec3(0.58,0.28,0.56), vec3(0.90,0.53,0.37), smoothstep(0.09, 0.18, p.y));
     col = mix(col, mixedCol, 1.0 - d);
 
-    addGrid(p, col);
+    // addGrid(p, col);
 
+}
+
+void thirdEye(in vec2 p, inout vec3 col) {
+    float d = 0.0;
+    float d1 = 0.0;
+    float d2 = 0.0;
+    float d3 = 0.0;
+    float r = 0.0;
+    vec2 modP = vec2(0.0);
+    vec3 mixedCol = vec3(0.0);
+    float modTime = 0.0;
+    float loopTime = 0.0;
+    vec2 pos1 = vec2(0.0);
+    vec2 pos2 = vec2(0.0);
+    vec2 mixedPos = vec2(0.0);
+    float isWithinTrapezoid = 0.0;
+
+    // lower trapezoid black bottom
+    d = sdTrapezoid(p - vec2(0.48, 0.12), 0.12, 0.32, 0.12);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    // light trapezoid background
+    d = sdTrapezoid(p - vec2(0.46, 0.12), 0.14, 0.322, 0.11);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, vec3(0.91,0.54,0.37), 1.0 - d);
+
+    // black of trapezoid
+    d = sdTrapezoid(p - vec2(0.26, 0.12), 0.335, 0.43, 0.12);
+    // bump 1
+    loopTime = 2.0;
+    pos1 = vec2(0.76, 0.29);
+    pos2 = vec2(0.55, 0.0);
+    modTime = mod(iTime, loopTime) / loopTime;
+    mixedPos = mix(pos1, pos2, modTime);
+    d1 = sdCircle(p - mixedPos, 0.02);
+    d = opSmoothUnion(d, d1, 0.04);
+    // bump 2
+    loopTime = 2.0;
+    pos1 = vec2(0.76, 0.29);
+    pos2 = vec2(0.55, 0.0);
+    modTime = mod(iTime + 0.7, loopTime) / loopTime;
+    mixedPos = mix(pos1, pos2, modTime);
+    d1 = sdCircle(p - mixedPos, 0.02);
+    d = opSmoothUnion(d, d1, 0.04);
+    // bump 3
+    loopTime = 2.0;
+    pos1 = vec2(0.76, 0.29);
+    pos2 = vec2(0.55, 0.0);
+    modTime = mod(iTime + 1.4, loopTime) / loopTime;
+    mixedPos = mix(pos1, pos2, modTime);
+    d1 = sdCircle(p - mixedPos, 0.02);
+    d = opSmoothUnion(d, d1, 0.04);
+
+    isWithinTrapezoid = step(0.0, p.y) * (1.0 - step(0.24, p.y));
+
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, (1.0 - d) * isWithinTrapezoid);
+
+    // trapezoid small triangle
+    d = sdTriangle(p, vec2(0.59, 0.03), vec2(0.59, 0.23), vec2(0.64, 0.23));
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, vec3(0.35,0.85,0.98), 1.0 - d);
+
+    // addGrid(p, col);
 }
 
 // void mainImage( out vec4 fragColor, in vec2 fragCoord )
@@ -609,7 +691,9 @@ void main()
     
     mouth(within(p, vec4(-0.3, -0.75, 0.3, -1.0)), col);
 
-    nose(within(p, vec4(-0.1, -0.2, 0.1, -0.75)), col);        
+    nose(within(p, vec4(-0.1, -0.2, 0.1, -0.75)), col);   
+
+    thirdEye(within(p, vec4(-0.5, 0.5, 0.5, -0.29)), col);     
 
 	// fragColor = vec4(col,1.0);
     gl_FragColor = vec4(col, 1.0);
