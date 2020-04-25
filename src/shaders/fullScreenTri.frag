@@ -18,7 +18,7 @@ uniform float mod6;
 #define sat(x) clamp(x, 0., 1.)
 #define PI 3.14159
 #define TAU 2.0 * PI
-#define gridThickness 0.005
+#define gridThickness 0.05
 
 vec3 headColor = vec3(0.45,0.21,0.67);
 vec3 bgColor = vec3(0.55,0.82,0.87);
@@ -35,12 +35,12 @@ vec3 mixedCol = vec3(0.0);
 **********************************************************
 **********************************************************/
 
-float remap01(float a, float b, float t) {
-	return sat((t-a)/(b-a));
+float linearStep(float begin, float end, float t) {
+    return clamp((t - begin) / (end - begin), 0.0, 1.0);
 }
 
-float remap(float a, float b, float c, float d, float t) {
-	return sat((t-a)/(b-a)) * (d-c) + c;
+float map(float value, float min1, float max1, float min2, float max2) {
+  return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
 }
 
 vec2 within(vec2 uv, vec4 rect) {
@@ -109,6 +109,22 @@ vec3 returnDottedCol(vec2 p, vec3 bgCol, vec3 dotCol) {
     dottedCol = mix(bgCol, dotCol, (1.0 - circle) * circleBool);
 
     return dottedCol;
+}
+
+float gain(float x, float k) 
+{
+    float a = 0.5*pow(2.0*((x<0.5)?x:1.0-x), k);
+    return (x<0.5)?a:1.0-a;
+}
+
+float expImpulse( float x, float k )
+{
+    float h = k*x;
+    return h*exp(1.0-h);
+}
+
+float customEase(float x, float k) {
+    return pow(x, k);
 }
 
 /*********************************************************
@@ -187,6 +203,14 @@ float sdTrapezoid( in vec2 p, in float r1, float r2, float he )
     float s = (cb.x < 0.0 && ca.y < 0.0) ? -1.0 : 1.0;
     
     return s*sqrt( min(dot2(ca),dot2(cb)) );
+}
+
+float sdArc( in vec2 p, in vec2 sca, in vec2 scb, in float ra, float rb )
+{
+    p *= mat2(sca.x,sca.y,-sca.y,sca.x);
+    p.x = abs(p.x);
+    float k = (scb.y*p.x>scb.x*p.y) ? dot(p.xy,scb) : length(p.xy);
+    return sqrt( dot(p,p) + ra*ra - 2.0*ra*k ) - rb;
 }
 
 /*********************************************************
@@ -610,7 +634,7 @@ void nose(in vec2 p, inout vec3 col) {
 
 }
 
-void thirdEye(in vec2 p, inout vec3 col) {
+void thirdEye(in vec2 p, inout vec3 col, vec2 origP) {
     float d = 0.0;
     float d1 = 0.0;
     float d2 = 0.0;
@@ -624,7 +648,248 @@ void thirdEye(in vec2 p, inout vec3 col) {
     vec2 pos2 = vec2(0.0);
     vec2 mixedPos = vec2(0.0);
     float isWithinTrapezoid = 0.0;
+    float mask = 0.0;
+    float mask1 = 0.0;
+    float mask2 = 0.0;
+    float m = 0.0;
+    float dropOffset = 0.5;
 
+    /////////////////////
+    // THIRD EYE CIRCLES
+    ////////////////////
+    // oil line on non circle part of circles
+    d = sdSegment(p, vec2(0.5, 0.61), vec2(0.5, 0.55)) - 0.007;
+    d1 = sdCircle(p - vec2(0.5, 0.52), 0.02);
+    d = opSmoothUnion(d, d1, 0.05);
+
+    //////////////////////////////////////////
+    // circular movement drip 1
+    modP = vec2(abs(origP.x) * 2.2, origP.y * 3.0);
+    modP.x += 0.5;
+    loopTime = 3.0;
+    modTime = fract(iTime / loopTime); 
+    // run normalized time through easing function
+    modTime = expImpulse(modTime, 0.5);
+    if(modTime < 0.55) {
+        m = map(modTime, 0.0, 0.55, 1.4, 0.47);
+    } else {
+        m = max(sin( (modTime - -0.72) / 0.69 ) + -0.5, (modTime - 0.582) / -0.096 * 1.098);
+    }
+    mask = step(0.68, modP.y);
+    d2 = sdCircle(modP - vec2(modTime, m), 0.05 * ((1.0 - modTime) + 0.2));
+    // mask it
+    d2 += mask;
+    d = opSmoothUnion(d, d2, 0.1);
+    
+    // drip 2
+    modP = vec2(abs(origP.x) * 2.2, origP.y * 3.0);
+    modP.x += 0.5;
+    loopTime = 3.0;
+    modTime = fract((iTime + 1.5) / loopTime); 
+    // run normalized time through easing function
+    modTime = expImpulse(modTime, 0.5);
+    if(modTime < 0.55) {
+        m = map(modTime, 0.0, 0.55, 1.4, 0.47);
+    } else {
+        m = max(sin( (modTime - -0.72) / 0.69 ) + -0.5, (modTime - 0.582) / -0.096 * 1.098);
+    }
+    mask = step(0.68, modP.y);
+    d2 = sdCircle(modP - vec2(modTime, m), 0.05 * ((1.0 - modTime) + 0.2));
+    // mask it
+    d2 += mask;
+    d = opSmoothUnion(d, d2, 0.1);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    //////////////////////////////////////////////////////
+    // outer third eye (the floating one)
+    // black bottom
+    mask1 = step(0.24, p.y);
+    d = sdCircle(p - vec2(0.5, 0.25), 0.35 * mask1);
+    d1 = sdCircle(p - vec2(0.5, 0.25), 0.42 * mask1);
+    d = opSubtraction(d, d1);
+    d = smoothstep(0.0, AA, d);
+    mask = d;
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    // colored part
+    d = sdCircle(p - vec2(0.5, 0.25), 0.36 * mask1);
+    d1 = sdCircle(p - vec2(0.5, 0.25), 0.41 * mask1);
+    d = opSubtraction(d, d1);
+    d = smoothstep(0.0, AA, d);
+    mixedCol = mix(vec3(0.91,0.65,0.36), vec3(0.92,0.54,0.36), smoothstep(0.52, 0.45, 1.0 - p.y));
+    col = mix(col, mixedCol, 1.0 - d);
+    // oil drip middle line and bottom connecting circle
+    d = sdSegment(p, vec2(0.5, 0.66), vec2(0.5, 0.61)) - 0.009;
+    d += mask;
+    d1 = sdCircle(p - vec2(0.51, 0.51), 0.11);
+    d1 += mask;
+    d = opSmoothUnion(d, d1, 0.03);
+    // circular movement drip 1
+    modP = vec2(abs(origP.x) * 3.0, origP.y * 3.0);
+    modP.x += 0.48;
+    modP.y -= 0.15;
+    loopTime = 3.0;
+    float time = iTime - 0.5;
+    modTime = fract(time / loopTime); 
+    // run normalized time through easing function
+    modTime = expImpulse(modTime, 0.5);
+    m = 0.5 - pow(abs(modTime), 5.5);
+    d2 = sdCircle(modP - vec2(modTime, m), 0.05 * ((1.0 - modTime) + 0.2));
+    // mask it
+    d2 += mask;
+    d = opSmoothUnion(d, d2, 0.1);
+    // circular movement drip 2
+    modTime = fract((time + (loopTime / 2.0)) / loopTime); 
+    // run normalized time through easing function
+    modTime = expImpulse(modTime, 0.5);
+    m = 0.5 - pow(abs(modTime), 5.5);
+    d2 = sdCircle(modP - vec2(modTime, m), 0.05 * ((1.0 - modTime) + 0.2));
+    // mask it
+    d2 += mask;
+    d = opSmoothUnion(d, d2, 0.1);
+
+
+    // color outer third eye oil
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+
+    // circle tips go woo woo
+    d = sdCircle(p - vec2(0.885, 0.24), 0.035);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    d = sdCircle(p - vec2(0.885, 0.24), 0.025);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, vec3(0.91,0.57,0.36), 1.0 - d);
+    d = sdCircle(p - vec2(0.885, 0.24), 0.015);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    
+
+    ///////////////////////////////////////////////
+    //third eye circle 5 (outer connected one to the trapezoid)
+    // inner third eye circle - black bottom
+    mask1 = step(0.24, p.y);
+    d = sdCircle(p - vec2(0.5, 0.25), 0.302 * mask1);
+    d = smoothstep(0.0, AA, d);
+    mask = d;
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    // inner third eye circle - color
+    d = sdCircle(p - vec2(0.5, 0.252), 0.292 * mask1);
+    d = smoothstep(0.0, AA, d);
+    modP = vec2(p.x * 3.9 + 0.765, p.y * 1.9);
+    col = mix(col, vec3(0.92,0.56,0.37), 1.0 - d);
+    // oil line
+    d = sdSegment(p, vec2(0.5, 0.335), vec2(0.5, 0.59)) - 0.003;
+    loopTime = 2.0;
+    modTime = mod(-iTime - dropOffset * 5.0, loopTime) / loopTime;
+    modP = vec2(origP.x * 3.0, origP.y * 3.0);
+    modP.x -= -0.5;
+    modP.y += mod2;
+
+    m = (0.6 - 0.4) * modTime + 0.4;
+    d1 = sdCircle(p - vec2(0.5, m), 0.01);
+    d = opSmoothUnion(d, d1, 0.05);
+    d2 = sdCircle(p - vec2(0.5, 0.43), 0.03);
+    d = opSmoothUnion(d, d2, 0.08);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, (1.0 - d) * (1.0 - mask));
+    addGrid(modP, col);
+    ///////////////////////////////////////////////
+    //third eye circle 4 (thick black)
+    // inner third eye circle - black bottom
+    d = sdCircle(p - vec2(0.5, 0.25), 0.23);
+    d = smoothstep(0.0, AA, d);
+    mask = d;
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    // // inner third eye circle - color
+    // d = sdCircle(p - vec2(0.5, 0.252), 0.20);
+    // d = smoothstep(0.0, AA, d);
+    // modP = vec2(p.x * 3.9 + 0.765, p.y * 1.9);
+    // mixedCol = returnDottedCol(modP, vec3(0.33,0.85,0.98), vec3(0.42,0.28,0.72));
+    // col = mix(col, mixedCol, 1.0 - d);
+    // // oil line
+    // d = sdSegment(p, vec2(0.5, 0.335), vec2(0.5, 0.51)) - 0.003;
+    // loopTime = 2.0;
+    // modTime = mod(-iTime - 1.0, loopTime) / loopTime;
+    // m = (0.5 - 0.3) * modTime + 0.3;
+    // d1 = sdCircle(p - vec2(0.5, m), 0.01);
+    // d = opSmoothUnion(d, d1, 0.05);
+    // d2 = sdCircle(p - vec2(0.5, 0.36), 0.03);
+    // d = opSmoothUnion(d, d2, 0.05);
+    // d = smoothstep(0.0, AA, d);
+    // col = mix(col, blackOutlineColor, (1.0 - d) * (1.0 - mask));
+    ///////////////////////////////////////////////
+    //third eye circle 3 (the dotted one)
+    // inner third eye circle - black bottom
+    d = sdCircle(p - vec2(0.5, 0.25), 0.21);
+    d = smoothstep(0.0, AA, d);
+    mask = d;
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    // inner third eye circle - color
+    d = sdCircle(p - vec2(0.5, 0.252), 0.20);
+    d = smoothstep(0.0, AA, d);
+    modP = vec2(p.x * 3.9 + 0.765, p.y * 1.9);
+    mixedCol = returnDottedCol(modP, vec3(0.33,0.85,0.98), vec3(0.42,0.28,0.72));
+    col = mix(col, mixedCol, 1.0 - d);
+    // oil line
+    d = sdSegment(p, vec2(0.5, 0.335), vec2(0.5, 0.51)) - 0.003;
+    loopTime = 2.0;
+    modTime = mod(-iTime - dropOffset * 3.0, loopTime) / loopTime;
+    m = (0.5 - 0.3) * modTime + 0.3;
+    d1 = sdCircle(p - vec2(0.5, m), 0.01);
+    d = opSmoothUnion(d, d1, 0.05);
+    d2 = sdCircle(p - vec2(0.5, 0.36), 0.03);
+    d = opSmoothUnion(d, d2, 0.05);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, (1.0 - d) * (1.0 - mask));
+    ///////////////////////////////////////////////
+    //third eye circle 2
+    // inner third eye circle - black bottom
+    d = sdCircle(p - vec2(0.5, 0.25), 0.14);
+    d = smoothstep(0.0, AA, d);
+    mask = d;
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    // inner third eye circle - color
+    d = sdCircle(p - vec2(0.5, 0.252), 0.13);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, vec3(0.48,0.17,0.69), 1.0 - d);
+    // oil line
+    d = sdSegment(p, vec2(0.5, 0.335), vec2(0.5, 0.51)) - 0.003;
+    loopTime = 2.0;
+    modTime = mod(-iTime - dropOffset * 2.0, loopTime) / loopTime;
+    m = (0.45 - 0.26) * modTime + 0.26;
+    d1 = sdCircle(p - vec2(0.5, m), 0.01);
+    d = opSmoothUnion(d, d1, 0.05);
+    d2 = sdCircle(p - vec2(0.5, 0.3), 0.03);
+    d = opSmoothUnion(d, d2, 0.05);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, (1.0 - d) * (1.0 - mask));
+    /////////////////////////////////////////////////
+    // third eye circle 1
+    // inner third eye circle - black bottom
+    d = sdCircle(p - vec2(0.5, 0.25), 0.09);
+    d = smoothstep(0.0, AA, d);
+    mask = d;
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    // inner third eye circle - color
+    d = sdCircle(p - vec2(0.5, 0.252), 0.08);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, vec3(0.91,0.54,0.36), 1.0 - d);
+    // oil line
+    d = sdSegment(p, vec2(0.5, 0.335), vec2(0.5, 0.29)) - 0.003;
+    loopTime = 2.0;
+    modTime = mod(-iTime - dropOffset * 1.0, loopTime) / loopTime;
+    m = (0.42 - 0.23) * modTime + 0.23;
+    d1 = sdCircle(p - vec2(0.5, m), 0.01);
+    d = opSmoothUnion(d, d1, 0.05);
+    d2 = sdCircle(p - vec2(0.5, 0.245), 0.03);
+    d = opSmoothUnion(d, d2, 0.05);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, (1.0 - d) * (1.0 - mask));
+    
+
+    /////////////////////////////////////////////////////////////// 
     // lower trapezoid black bottom
     d = sdTrapezoid(p - vec2(0.48, 0.12), 0.12, 0.32, 0.12);
     d = smoothstep(0.0, AA, d);
@@ -672,7 +937,50 @@ void thirdEye(in vec2 p, inout vec3 col) {
     d = smoothstep(0.0, AA, d);
     col = mix(col, vec3(0.35,0.85,0.98), 1.0 - d);
 
-    // addGrid(p, col);
+    //////////////////////////////////////////////////////////////////////////
+    // trapezoid tube - black bottom
+    r = 0.05;
+    d = sdSegment(p, vec2(0.496, 0.24), vec2(0.496, 0.0)) - r;
+    d1 = step(0.008, p.y);
+    d = smoothstep(0.0, AA, d);
+    mask = d;
+    col = mix(col, blackOutlineColor, (1.0 - d) * d1);
+    // trapezoid tube - color
+    r = 0.043;
+    d = sdSegment(p, vec2(0.496, 0.24), vec2(0.496, 0.0)) - r;
+    d1 = step(0.008, p.y);
+    d = smoothstep(0.0, AA, d);
+    mixedCol = mix(vec3(0.41,0.36,0.68), vec3(0.42,0.72,0.90), smoothstep(0.6, 0.47, p.x));
+    col = mix(col, mixedCol, (1.0 - d) * d1);
+    // middle tube divider
+    r = 0.0005;
+    loopTime = 1.0;
+    modTime = mod(iTime, loopTime) / loopTime;
+    m = 0.1 * modTime - 0.05;
+    d3 = sdSegment(origP, vec2(m, -0.285), vec2(m, 0.5)) - r;
+    d3 = smoothstep(0.0, AA, d3);
+    col = mix(col, blackOutlineColor, (1.0 - d3) * (1.0 - mask));
+    // tube divider 1
+    r = 0.05;
+    d = sdCircle(p - vec2(0.5, 0.14), 0.06);
+    d1 = sdCircle(p - vec2(0.5, 0.15), 0.055);
+    d = opSubtraction(d, d1);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    // tube divider 2
+    r = 0.05;
+    d = sdCircle(p - vec2(0.5, 0.04), 0.06);
+    d1 = sdCircle(p - vec2(0.5, 0.05), 0.055);
+    d = opSubtraction(d, d1);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+
+
+    
+    // addGrid(modP, col);
+
+    
 }
 
 // void mainImage( out vec4 fragColor, in vec2 fragCoord )
@@ -682,18 +990,18 @@ void main()
     vec2 p = (2.0 * gl_FragCoord.xy - iResolution.xy) / iResolution.y;
     
 
-    
+    vec2 origP = vec2(p.x, p.y);
     // mirror coords
     p.x = abs(p.x);
     
     head(within(p, vec4(-0.7, 0.6, 0.7, -1.0)), col);
-    eye(within(p, vec4(0.1 , -0.25, 0.6, -0.7)), col);
+    eye(within(p, vec4(0.13, -0.25, 0.63, -0.7)), col);
     
     mouth(within(p, vec4(-0.3, -0.75, 0.3, -1.0)), col);
 
     nose(within(p, vec4(-0.1, -0.2, 0.1, -0.75)), col);   
 
-    thirdEye(within(p, vec4(-0.5, 0.5, 0.5, -0.29)), col);     
+    thirdEye(within(p, vec4(-0.5, 0.5, 0.5, -0.29)), col, origP);     
 
 	// fragColor = vec4(col,1.0);
     gl_FragColor = vec4(col, 1.0);
