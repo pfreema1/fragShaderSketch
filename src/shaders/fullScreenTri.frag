@@ -7,6 +7,9 @@ uniform float mod3;
 uniform float mod4;
 uniform float mod5;
 uniform float mod6;
+uniform float mod7;
+uniform float mod8;
+uniform float mod9;
 
 /*
     This code is ugly and inefficient, just like ur mum.  
@@ -127,6 +130,23 @@ float customEase(float x, float k) {
     return pow(x, k);
 }
 
+float almostIdentity( float x, float m, float n )
+{
+    if( x>m ) return x;
+    float a = 2.0*n - m;
+    float b = 2.0*m - 3.0*n;
+    float t = x/m;
+    return (a*t + b)*t*t + n;
+}
+
+float undulateAngle(int index, float angle, float movementScale, float offsetScale, float timeScale) {
+    float offset = float(index) * offsetScale;
+    float m = angle + sin(iTime * timeScale + offset) * movementScale;
+    return m;
+}
+
+
+
 /*********************************************************
 **********************************************************
 **********************************************************
@@ -135,6 +155,38 @@ float customEase(float x, float k) {
 float sdCircle( in vec2 p, in float r ) 
 {
     return length(p)-r;
+}
+
+float returnTween1Dist(vec2 p, float t, float circleRadius) {
+    // t = normalized time
+    vec2 from = vec2(0.5, 1.0);
+    vec2 to = vec2(0.5, 0.66);
+    vec2 pos = mix(from, to, t);
+    float d = sdCircle(p - pos, circleRadius);
+    return d;
+}
+
+float returnTween2Dist(vec2 p, float t, float circleRadius) {
+    // t = normalized time
+    vec2 from = vec2(0.5, 0.66);
+    vec2 to = vec2(0.5, 0.3);
+    float radius = (from.y - to.y) / 2.0;
+    float angle = map(t, 0.0, 1.0, PI / 2.0, (3.0 * PI) / 2.0);
+    float angleOffset = -PI * 0.5;
+    // cycle through angle based on t
+    vec2 pos = vec2(sin(angle + angleOffset) * radius, cos(angle + angleOffset) * radius);
+    pos += 0.5;
+    float d = sdCircle(p - pos, circleRadius);
+    return d;
+}
+
+float returnTween3Dist(vec2 p, float t, float circleRadius) {
+    // t = normalized time
+    vec2 from = vec2(0.5, 0.3);
+    vec2 to = vec2(0.5, 0.0);
+    vec2 pos = mix(from, to, t);
+    float d = sdCircle(p - pos, circleRadius);
+    return d;
 }
 
 float sdBox( in vec2 p, in vec2 b, float r)
@@ -211,6 +263,44 @@ float sdArc( in vec2 p, in vec2 sca, in vec2 scb, in float ra, float rb )
     p.x = abs(p.x);
     float k = (scb.y*p.x>scb.x*p.y) ? dot(p.xy,scb) : length(p.xy);
     return sqrt( dot(p,p) + ra*ra - 2.0*ra*k ) - rb;
+}
+
+float sdBezier( in vec2 pos, in vec2 A, in vec2 B, in vec2 C )
+{    
+    vec2 a = B - A;
+    vec2 b = A - 2.0*B + C;
+    vec2 c = a * 2.0;
+    vec2 d = A - pos;
+    float kk = 1.0/dot(b,b);
+    float kx = kk * dot(a,b);
+    float ky = kk * (2.0*dot(a,a)+dot(d,b)) / 3.0;
+    float kz = kk * dot(d,a);      
+    float res = 0.0;
+    float p = ky - kx*kx;
+    float p3 = p*p*p;
+    float q = kx*(2.0*kx*kx-3.0*ky) + kz;
+    float h = q*q + 4.0*p3;
+    if( h >= 0.0) 
+    { 
+        h = sqrt(h);
+        vec2 x = (vec2(h,-h)-q)/2.0;
+        vec2 uv = sign(x)*pow(abs(x), vec2(1.0/3.0));
+        float t = clamp( uv.x+uv.y-kx, 0.0, 1.0 );
+        res = dot2(d + (c + b*t)*t);
+    }
+    else
+    {
+        float z = sqrt(-p);
+        float v = acos( q/(p*z*2.0) ) / 3.0;
+        float m = cos(v);
+        float n = sin(v)*1.732050808;
+        vec3  t = clamp(vec3(m+m,-n-m,n-m)*z-kx,0.0,1.0);
+        res = min( dot2(d+(c+b*t.x)*t.x),
+                   dot2(d+(c+b*t.y)*t.y) );
+        // the third root cannot be the closest
+        // res = min(res,dot2(d+(c+b*t.z)*t.z));
+    }
+    return sqrt( res );
 }
 
 /*********************************************************
@@ -782,19 +872,26 @@ void thirdEye(in vec2 p, inout vec3 col, vec2 origP) {
     // oil line
     d = sdSegment(p, vec2(0.5, 0.335), vec2(0.5, 0.59)) - 0.003;
     loopTime = 2.0;
-    modTime = mod(-iTime - dropOffset * 5.0, loopTime) / loopTime;
-    modP = vec2(origP.x * 3.0, origP.y * 3.0);
+    // modTime = mod(iTime - dropOffset * 5.0, loopTime) / loopTime;
+    modTime = fract((iTime - 0.25) / loopTime);
+    //////////
+    modP = vec2(abs(origP.x) * 3.0, origP.y * 3.0);
     modP.x -= -0.5;
-    modP.y += mod2;
-
-    m = (0.6 - 0.4) * modTime + 0.4;
-    d1 = sdCircle(p - vec2(0.5, m), 0.01);
-    d = opSmoothUnion(d, d1, 0.05);
+    modP.y += 0.25;
+    modTime = expImpulse(modTime, 0.5);
+    if(modTime < 0.5) {
+        m = map(modTime, 0.0, 0.5, 1.0, 0.5);
+        modTime = map(modTime, 0.0, 0.5, 0.4, 0.5);
+    } else {
+        m = max(-99.0 * modTime + 50.0, pow(cos(3.14 * (modTime - 0.5) / 2.0), 0.5) - 0.5);
+    }
+    d1 = sdCircle(modP - vec2(modTime, m), 0.05 * ((1.0 - modTime) + 0.2));
+    d = opSmoothUnion(d, d1, 0.1);
     d2 = sdCircle(p - vec2(0.5, 0.43), 0.03);
     d = opSmoothUnion(d, d2, 0.08);
     d = smoothstep(0.0, AA, d);
-    col = mix(col, blackOutlineColor, (1.0 - d) * (1.0 - mask));
-    addGrid(modP, col);
+    col = mix(col, blackOutlineColor, (1.0 - d) * (1.0/* - mask*/));
+    // addGrid(modP, col);
     ///////////////////////////////////////////////
     //third eye circle 4 (thick black)
     // inner third eye circle - black bottom
@@ -983,6 +1080,98 @@ void thirdEye(in vec2 p, inout vec3 col, vec2 origP) {
     
 }
 
+void test(vec2 p, inout vec3 col) {
+    vec2 pos = vec2(0.0, 0.0);
+    float loopTime = 3.0;
+    float modTime = fract(iTime / loopTime);
+
+    modTime = map(modTime, 0.0, 1.0, 0.0, TAU);
+    float r = 0.5;
+    pos.x = sin(modTime) * r;
+    pos.y = cos(modTime) * r;
+
+    float d = sdCircle(p - pos, 0.05);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, vec3(1.0), 1.0 - d);
+}
+
+void eyeOil(vec2 p, inout vec3 col) {
+    float d = 0.0;
+    float d1 = 0.0;
+    float d2 = 0.0;
+    float d3 = 0.0;
+    float r = 0.0;
+    vec2 modP = vec2(0.0);
+    vec3 mixedCol = vec3(0.0);
+    float modTime = 0.0;
+    float loopTime = 0.0;
+    vec2 pos1 = vec2(0.0);
+    vec2 pos2 = vec2(0.0);
+    vec2 mixedPos = vec2(0.0);
+    float isWithinTrapezoid = 0.0;
+    float mask = 0.0;
+    float mask1 = 0.0;
+    float mask2 = 0.0;
+    float m = 0.0;
+    float dropOffset = 0.5;
+
+    /////////////////////////////////////
+    // cluster of circles
+    /////////////////////////////////////
+    float startAngle = 0.0;
+    float margin = 0.05;
+    float circleLayoutRadius = 0.5;
+    float circleRadius = 0.02;
+    // draw center
+    modP = within(p, vec4(-1.0, 0.13 + 0.7, -0.41, -0.41 + 0.7)); //vec2(p.x + 0.72, p.y - 0.61);
+    addGrid(modP, col);
+    d = sdCircle(modP - vec2(0.5), 0.02);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, vec3(1.0), 1.0 - d);
+    /*
+    // DRAWS THE CIRCLES IN UNDULATING CIRCLE
+    // position circles
+    for(int i = 0; i < 10; i++) {
+        float angle = startAngle + (float(i) * (circleRadius + margin));
+        angle = undulateAngle(i, angle, 0.1, 0.5, 2.0);
+        vec2 pos = vec2(sin(angle) * circleLayoutRadius, cos(angle) * circleLayoutRadius) + vec2(0.5);
+        d1 = sdCircle(modP - pos, circleRadius);
+        if(i != 0) {
+            d = opSmoothUnion(d, d1, 0.09);
+        }
+    }
+    */
+
+    // DRAW CIRLCLES THROUGH TWEEN
+    loopTime = 3.0;
+    // position circles
+    for(int i = 0; i < 10; i++) {
+        vec2 pos = vec2(0.0);
+        float timeMargin = float(i) * 0.3;
+        modTime = fract((iTime + timeMargin) / loopTime);
+        circleRadius = map(sin(iTime + float(i)), -1.0, 1.0, 0.005, 0.04);
+        if(modTime < 0.33) {
+            // tween 1
+            d1 = returnTween1Dist(modP, linearStep(0.0, 0.33, modTime), circleRadius);
+        } else if(modTime < 0.66) {
+            //tween 2
+            d1 = returnTween2Dist(modP, linearStep(0.33, 0.66, modTime), circleRadius);
+        } else {
+            // tween 3
+            d1 = returnTween3Dist(modP, linearStep(0.66, 1.0, modTime), circleRadius);
+        }
+
+        if(i != 0) {
+            d = opSmoothUnion(d, d1, 0.15);
+        }
+    }
+    
+    // draw circles
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, vec3(1.0), 1.0 - d);
+    
+}
+
 // void mainImage( out vec4 fragColor, in vec2 fragCoord )
 void main()
 {
@@ -995,13 +1184,18 @@ void main()
     p.x = abs(p.x);
     
     head(within(p, vec4(-0.7, 0.6, 0.7, -1.0)), col);
+    eyeOil(origP, col);
     eye(within(p, vec4(0.13, -0.25, 0.63, -0.7)), col);
     
     mouth(within(p, vec4(-0.3, -0.75, 0.3, -1.0)), col);
 
     nose(within(p, vec4(-0.1, -0.2, 0.1, -0.75)), col);   
 
-    thirdEye(within(p, vec4(-0.5, 0.5, 0.5, -0.29)), col, origP);     
+    thirdEye(within(p, vec4(-0.5, 0.5, 0.5, -0.29)), col, origP);  
+
+ 
+    // test(origP, col);
+
 
 	// fragColor = vec4(col,1.0);
     gl_FragColor = vec4(col, 1.0);

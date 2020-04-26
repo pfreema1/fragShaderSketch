@@ -55,6 +55,15 @@ export default class RenderTri {
         },
         mod6: {
           value: 1.0
+        },
+        mod7: {
+          value: 1.0
+        },
+        mod8: {
+          value: 1.0
+        },
+        mod9: {
+          value: 1.0
         }
       }
     });
@@ -77,47 +86,71 @@ export default class RenderTri {
     this.PARAMS.mod4 = 1.0;
     this.PARAMS.mod5 = 1.0;
     this.PARAMS.mod6 = 1.0;
+    this.PARAMS.mod7 = 1.0;
+    this.PARAMS.mod8 = 1.0;
+    this.PARAMS.mod9 = 1.0;
 
     this.pane.addInput(this.PARAMS, 'mod1', {
-      min: 0.0,
+      min: -1.0,
       max: 1.0
     }).on('change', value => {
       this.triMaterial.uniforms.mod1.value = value;
     });
 
     this.pane.addInput(this.PARAMS, 'mod2', {
-      min: 0.0,
+      min: -1.0,
       max: 1.0
     }).on('change', value => {
       this.triMaterial.uniforms.mod2.value = value;
     });
 
     this.pane.addInput(this.PARAMS, 'mod3', {
-      min: 0.0,
+      min: -1.0,
       max: 1.0
     }).on('change', value => {
       this.triMaterial.uniforms.mod3.value = value;
     });
 
     this.pane.addInput(this.PARAMS, 'mod4', {
-      min: 0.0,
+      min: -1.0,
       max: 1.0
     }).on('change', value => {
       this.triMaterial.uniforms.mod4.value = value;
     });
 
     this.pane.addInput(this.PARAMS, 'mod5', {
-      min: 0.0,
+      min: -1.0,
       max: 1.0
     }).on('change', value => {
       this.triMaterial.uniforms.mod5.value = value;
     });
 
     this.pane.addInput(this.PARAMS, 'mod6', {
-      min: 0.0,
+      min: -1.0,
       max: 1.0
     }).on('change', value => {
       this.triMaterial.uniforms.mod6.value = value;
+    });
+
+    this.pane.addInput(this.PARAMS, 'mod7', {
+      min: -1.0,
+      max: 1.0
+    }).on('change', value => {
+      this.triMaterial.uniforms.mod7.value = value;
+    });
+
+    this.pane.addInput(this.PARAMS, 'mod8', {
+      min: -1.0,
+      max: 1.0
+    }).on('change', value => {
+      this.triMaterial.uniforms.mod8.value = value;
+    });
+
+    this.pane.addInput(this.PARAMS, 'mod9', {
+      min: -1.0,
+      max: 1.0
+    }).on('change', value => {
+      this.triMaterial.uniforms.mod9.value = value;
     });
   }
 
