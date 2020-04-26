@@ -84,6 +84,11 @@ void addGrid(vec2 p, inout vec3 col) {
     col = mix(col, gridOutlineCol, outline * all);
 }
 
+float opSmoothUnion( float d1, float d2, float k ) {
+    float h = clamp( 0.5 + 0.5*(d2-d1)/k, 0.0, 1.0 );
+    return mix( d2, d1, h ) - k*h*(1.0-h); 
+}
+
 vec3 returnDottedCol(vec2 p, vec3 bgCol, vec3 dotCol) {
     vec3 dottedCol = vec3(0.0);
 
@@ -157,6 +162,33 @@ float sdCircle( in vec2 p, in float r )
     return length(p)-r;
 }
 
+
+
+float returnTween4Dist(vec2 p, float t, float circleRadius) {
+    // t = normalized time
+    vec2 from = vec2(0.5, 0.66);
+    vec2 to = vec2(0.5, 0.3);
+    float radius = (from.y - to.y) / 2.0;
+    float startAngle = (3.0 * PI) / 2.0;
+    float endAngle = PI;
+    float angle = map(t, 0.0, 1.0, startAngle, endAngle);
+    float angleOffset = -PI * 2.0;
+    // cycle through angle based on t
+    vec2 pos = vec2(sin(angle + angleOffset) * radius, cos(angle + angleOffset) * radius);
+    pos += 0.5;
+    float d = sdCircle(p - pos, circleRadius);
+    return d;
+}
+
+float returnTween5Dist(vec2 p, float t, float circleRadius) {
+    // t = normalized time
+    vec2 from = vec2(0.5, 0.5);
+    vec2 to = vec2(0.5, -0.3);
+    vec2 pos = mix(from, to, t);
+    float d = sdCircle(p - pos, circleRadius);
+    return d;
+}
+
 float returnTween1Dist(vec2 p, float t, float circleRadius) {
     // t = normalized time
     vec2 from = vec2(0.5, 1.0);
@@ -166,12 +198,43 @@ float returnTween1Dist(vec2 p, float t, float circleRadius) {
     return d;
 }
 
+mat2 rotate2d(float _angle){
+    return mat2(cos(_angle),-sin(_angle),
+                sin(_angle),cos(_angle));
+}
+
+void makeSecondSwoop(vec2 p, inout float d, float loopTime, inout vec3 col, float time) {
+    p -= vec2(0.28, 0.02);
+
+    for(int i = 0; i < 10; i++) {
+        float d1 = 0.0;
+        float margin = sin(float(i) + time) * 1.0;
+        float modTime = fract((time + margin) / loopTime);
+        float circleRadius = 0.1 * (1.0 - (p.y));
+
+        if(modTime < 0.5) {
+            d1 = returnTween4Dist(p, linearStep(0.0, 0.5, modTime), circleRadius);
+        } else {
+            d1 = returnTween5Dist(p, linearStep(0.5, 1.0, modTime), circleRadius);
+        }
+       
+        // d1 = smoothstep(0.0, AA, d1);
+        // col = mix(col, vec3(1.0), 1.0 - d1);
+
+        if(i != 0) {
+            d = opSmoothUnion(d, d1, 0.04);
+        }
+    }
+}
+
 float returnTween2Dist(vec2 p, float t, float circleRadius) {
     // t = normalized time
     vec2 from = vec2(0.5, 0.66);
-    vec2 to = vec2(0.5, 0.3);
+    vec2 to = vec2(0.5, 0.33);
     float radius = (from.y - to.y) / 2.0;
-    float angle = map(t, 0.0, 1.0, PI / 2.0, (3.0 * PI) / 2.0);
+    float startAngle = PI / 2.0;
+    float endAngle = (3.0 * PI) / 2.0;
+    float angle = map(t, 0.0, 1.0, startAngle, endAngle);
     float angleOffset = -PI * 0.5;
     // cycle through angle based on t
     vec2 pos = vec2(sin(angle + angleOffset) * radius, cos(angle + angleOffset) * radius);
@@ -182,8 +245,8 @@ float returnTween2Dist(vec2 p, float t, float circleRadius) {
 
 float returnTween3Dist(vec2 p, float t, float circleRadius) {
     // t = normalized time
-    vec2 from = vec2(0.5, 0.3);
-    vec2 to = vec2(0.5, 0.0);
+    vec2 from = vec2(0.5, 0.33);
+    vec2 to = vec2(0.66, -0.8);
     vec2 pos = mix(from, to, t);
     float d = sdCircle(p - pos, circleRadius);
     return d;
@@ -205,10 +268,7 @@ float sdSegment( in vec2 p, in vec2 a, in vec2 b )
 
 
 
-float opSmoothUnion( float d1, float d2, float k ) {
-    float h = clamp( 0.5 + 0.5*(d2-d1)/k, 0.0, 1.0 );
-    return mix( d2, d1, h ) - k*h*(1.0-h); 
-}
+
 
 float opSmoothSubtraction( float d1, float d2, float k ) {
     float h = clamp( 0.5 - 0.5*(d2+d1)/k, 0.0, 1.0 );
@@ -1114,6 +1174,8 @@ void eyeOil(vec2 p, inout vec3 col) {
     float mask2 = 0.0;
     float m = 0.0;
     float dropOffset = 0.5;
+    float time = 0.0;
+    float timeScale = 0.3;
 
     /////////////////////////////////////
     // cluster of circles
@@ -1122,53 +1184,59 @@ void eyeOil(vec2 p, inout vec3 col) {
     float margin = 0.05;
     float circleLayoutRadius = 0.5;
     float circleRadius = 0.02;
-    // draw center
-    modP = within(p, vec4(-1.0, 0.13 + 0.7, -0.41, -0.41 + 0.7)); //vec2(p.x + 0.72, p.y - 0.61);
-    addGrid(modP, col);
+    modP = within(p, vec4(-0.02, -0.02, 0.93, -0.87));
+    // modP = within(p, vec4(-0.13, 0.09, 0.93, -1.0)); 
+    // rotate grid just a tad
+    modP = rotate2d(0.05) * modP;
+    // addGrid(modP, col);
     d = sdCircle(modP - vec2(0.5), 0.02);
     d = smoothstep(0.0, AA, d);
     col = mix(col, vec3(1.0), 1.0 - d);
-    /*
-    // DRAWS THE CIRCLES IN UNDULATING CIRCLE
-    // position circles
-    for(int i = 0; i < 10; i++) {
-        float angle = startAngle + (float(i) * (circleRadius + margin));
-        angle = undulateAngle(i, angle, 0.1, 0.5, 2.0);
-        vec2 pos = vec2(sin(angle) * circleLayoutRadius, cos(angle) * circleLayoutRadius) + vec2(0.5);
-        d1 = sdCircle(modP - pos, circleRadius);
-        if(i != 0) {
-            d = opSmoothUnion(d, d1, 0.09);
-        }
-    }
-    */
+    time = iTime * timeScale;
 
     // DRAW CIRLCLES THROUGH TWEEN
     loopTime = 3.0;
     // position circles
-    for(int i = 0; i < 10; i++) {
-        vec2 pos = vec2(0.0);
-        float timeMargin = float(i) * 0.3;
-        modTime = fract((iTime + timeMargin) / loopTime);
-        circleRadius = map(sin(iTime + float(i)), -1.0, 1.0, 0.005, 0.04);
-        if(modTime < 0.33) {
+    for(int i = 0; i < 12; i++) {
+        float margin = sin(float(i) + time) * 1.0;
+        modTime = fract((time + margin) / loopTime);
+        float s = 1.0; //smoothstep(0.0, 0.1, modP.y);
+        float m = modP.y * modP.y * 1.5;
+        circleRadius = map(m, 0.0, 1.0, 0.04, 0.005);
+        // circleRadius *= s;
+        // circleRadius = 0.004;
+        if(modTime < 0.333) {
             // tween 1
-            d1 = returnTween1Dist(modP, linearStep(0.0, 0.33, modTime), circleRadius);
-        } else if(modTime < 0.66) {
+            d1 = returnTween1Dist(modP, linearStep(0.0, 0.333, modTime), circleRadius);
+        } else if(modTime < 0.666) {
             //tween 2
-            d1 = returnTween2Dist(modP, linearStep(0.33, 0.66, modTime), circleRadius);
+            d1 = returnTween2Dist(modP, linearStep(0.33, 0.666, modTime), circleRadius);
         } else {
             // tween 3
-            d1 = returnTween3Dist(modP, linearStep(0.66, 1.0, modTime), circleRadius);
+            d1 = returnTween3Dist(modP, linearStep(0.666, 1.0, modTime), circleRadius);
         }
 
         if(i != 0) {
-            d = opSmoothUnion(d, d1, 0.15);
+            float smoothVal = modP.y * 0.12;
+            d = opSmoothUnion(d, d1, smoothVal);  // 0.12
         }
     }
-    
-    // draw circles
+
+    // base circle
+    d1 = sdCircle(p - vec2(0.37, -0.48), 0.2);
+    d = opSmoothUnion(d, d1, 0.13);
+    // // draw oil
+    // d = smoothstep(0.0, AA, d);
+    // col = mix(col, blackOutlineColor, 1.0 - d);
+    /////////////////////////////////////////////////////////////
+    // bottom left swoop tween
+    modP = within(p, vec4(-0.43, 0.09, 0.76, -1.0));
+    // addGrid(modP, col);
+    makeSecondSwoop(modP, d, loopTime, col, time);
+    // d = opSmoothUnion(d, d1, 0.01);
+    // draw oil
     d = smoothstep(0.0, AA, d);
-    col = mix(col, vec3(1.0), 1.0 - d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
     
 }
 
@@ -1183,8 +1251,8 @@ void main()
     // mirror coords
     p.x = abs(p.x);
     
-    head(within(p, vec4(-0.7, 0.6, 0.7, -1.0)), col);
-    eyeOil(origP, col);
+    head(within(p, vec4(-0.75, 0.6, 0.75, -1.0)), col);
+    eyeOil(p, col);
     eye(within(p, vec4(0.13, -0.25, 0.63, -0.7)), col);
     
     mouth(within(p, vec4(-0.3, -0.75, 0.3, -1.0)), col);
