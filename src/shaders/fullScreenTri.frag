@@ -162,6 +162,15 @@ float sdCircle( in vec2 p, in float r )
     return length(p)-r;
 }
 
+float sdCross( in vec2 p, in vec2 b, float r ) 
+{
+    p = abs(p); p = (p.y>p.x) ? p.yx : p.xy;
+    vec2  q = p - b;
+    float k = max(q.y,q.x);
+    vec2  w = (k>0.0) ? q : vec2(b.y-p.x,-k);
+    return sign(k)*length(max(w,0.0)) + r;
+}
+
 
 
 float returnTween4Dist(vec2 p, float t, float circleRadius) {
@@ -466,7 +475,7 @@ void head(in vec2 p, inout vec3 col) {
     float r = 0.5;
 	float d = sdSegment(p, headSegA, headSegB) - r;
     d = smoothstep(0.0, AA,d);
-    col = mix(blackOutlineColor, bgColor, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
 
     // head goo
     d = sdSegment(p, headSegA, headSegB) - r * (1.0 - blackOutlineWidth);
@@ -806,19 +815,19 @@ void upperThirdEyeOil(vec2 p, inout vec3 col, vec2 origP) {
     float m = 0.0;
     float dropOffset = 0.5;
 
-    modP = within(origP, vec4(-0.24, 0.61, 0.7, -0.33));
+    modP = within(vec2(abs(origP.x), origP.y), vec4(-0.24, 0.61, 0.7, -0.33));
 
     d = sdBezier(modP, vec2(0.33, 0.59), vec2(0.61, 0.57), vec2(0.7, 0.26)) - 0.02;
     // draw base oil
     // d = smoothstep(0.0, AA, d);
     // col = mix(col, blackOutlineColor, 1.0 - d);
 
-    loopTime = 2.0;
+    loopTime = 4.0;
     // draw drops
-    for(int i = 0; i < 5; i++) {
+    for(int i = 0; i < 7; i++) {
         float margin = sin(0.4 * float(i) + iTime);
         modTime = fract((iTime + margin) / loopTime);
-        modTime = map(modTime, 0.0, 1.0, 0.2, 0.9);
+        modTime = map(modTime, 0.0, 1.0, 0.2, 0.85);
         float remap = map(modTime, 0.0, 1.0, -1.0, 1.0);
         float y = 1.0 - pow(abs(sin(PI * remap / 2.0)), 2.0);
         float circleRadius = map(y, 0.0, 1.0, 0.0, 0.015);
@@ -838,7 +847,7 @@ void upperThirdEyeOil(vec2 p, inout vec3 col, vec2 origP) {
     col = mix(col, blackOutlineColor, 1.0 - d);
 
 
-    addGrid(modP, col);
+    // addGrid(modP, col);
 }
 
 void thirdEye(in vec2 p, inout vec3 col, vec2 origP) {
@@ -1315,7 +1324,128 @@ void eyeOil(vec2 p, inout vec3 col) {
     
 }
 
+void hat(vec2 p, inout vec3 col, vec2 origP) {
+    float d = 0.0;
+    float d1 = 0.0;
+    float d2 = 0.0;
+    float d3 = 0.0;
+    float r = 0.0;
+    vec2 modP = vec2(0.0);
+    vec2 p1 = vec2(0.0);
+    vec3 mixedCol = vec3(0.0);
+    float modTime = 0.0;
+    float loopTime = 0.0;
+    vec2 pos1 = vec2(0.0);
+    vec2 pos2 = vec2(0.0);
+    vec2 mixedPos = vec2(0.0);
+    float isWithinTrapezoid = 0.0;
+    float mask = 0.0;
+    float mask1 = 0.0;
+    float mask2 = 0.0;
+    float m = 0.0;
+    float dropOffset = 0.5;
 
+    modP = within(origP, vec4(-1.0, 1.0, 1.0, -0.52));
+
+    // black bottom
+    d = sdSegment(p, vec2(0.0, -0.10), vec2(-0.26, -0.93)) - 0.76;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    // colored part
+    d = sdSegment(p, vec2(0.0, -0.10), vec2(-0.26, -0.93)) - 0.745;
+    d = smoothstep(0.0, AA, d);
+    mixedCol = returnDottedCol(vec2(p.x * 4.0, p.y * 2.0), vec3(0.91,0.75,0.34), vec3(0.82,0.44,0.12));
+    col = mix(col, mixedCol, 1.0 - d);
+
+    // addGrid(modP, col);
+
+
+}
+
+void crown(vec2 p, inout vec3 col, vec2 origP) {
+    float d = 0.0;
+    float d1 = 0.0;
+    float d2 = 0.0;
+    float d3 = 0.0;
+    float r = 0.0;
+    vec2 modP = vec2(0.0);
+    vec2 p1 = vec2(0.0);
+    vec3 mixedCol = vec3(0.0);
+    float modTime = 0.0;
+    float loopTime = 0.0;
+    vec2 pos1 = vec2(0.0);
+    vec2 pos2 = vec2(0.0);
+    vec2 mixedPos = vec2(0.0);
+    float isWithinTrapezoid = 0.0;
+    float mask = 0.0;
+    float mask1 = 0.0;
+    float mask2 = 0.0;
+    float m = 0.0;
+    float dropOffset = 0.5;
+
+    modP = within(origP, vec4(-1.0, 1.0, 1.0, -0.52));
+
+
+    addGrid(modP, col);
+
+    // black bottom
+    d = sdBox(modP - vec2(0.5, 0.91), vec2(0.1, 0.44), 0.0);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    // color bg
+    d = sdBox(modP - vec2(0.5, 0.91), vec2(0.095, 0.405), 0.04);
+    d = smoothstep(0.0, AA, d);
+    mask = 1.0 - d;
+    mixedCol = mix(vec3(0.61,0.80,0.72), vec3(0.90,0.76,0.34), map(modP.y, 0.4, 1.0, 0.0, 1.0));
+    col = mix(col, mixedCol, 1.0 - d);
+
+    // middle pipe
+    loopTime = 2.0;
+    modTime = fract((iTime + 0.05) / loopTime);
+    m = abs(sin(modTime * TAU)) * 0.02;
+    d = sdSegment(p, vec2(0.0 + m, 0.85), vec2(0.0, 0.26)) - 0.05;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    // bottom color of middle pipe
+    d = sdSegment(p, vec2(0.0, 0.57), vec2(0.0, 0.26)) - 0.04;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, vec3(0.90,0.63,0.34), 1.0 - d);
+
+
+    // bottom circle
+    modTime = fract((iTime) / loopTime);
+    m = 0.25 + sin(modTime * TAU) * 0.02;
+    d = sdCircle(p - vec2(0.0, m), 0.05);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    d = sdCircle(p - vec2(0.0, m), 0.045);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, vec3(0.89,0.96,0.91), 1.0 - d);
+
+    // top circle
+    float radiusM = abs(sin(modTime * TAU)) * 0.02;
+    d = sdCircle(p - vec2(0.0, 0.85), 0.05 + radiusM);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    d = sdCircle(p - vec2(0.0, 0.85), 0.045 + radiusM);
+    d = smoothstep(0.0, AA, d);
+    mixedCol = returnDottedCol(vec2(p.x * 4.0, p.y * 2.0), vec3(0.91,0.55,0.37), vec3(0.84,0.36,0.18));
+    col = mix(col, mixedCol, 1.0 - d);
+
+    // diamond black bottom
+    d = sdCross(origP - vec2(0.0, 0.84), vec2(0.52, 0.33), 0.37);
+    d1 = sdCross(origP - vec2(0.0, 0.84), vec2(0.52, 0.33), 0.37 - 0.05);
+    d = opSubtraction(d, d1);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, (1.0 - d) * mask);
+    // diamond white part
+    d = sdCross(origP - vec2(0.0, 0.84), vec2(0.52, 0.33), 0.36);
+    d1 = sdCross(origP - vec2(0.0, 0.84), vec2(0.52, 0.33), 0.38 - 0.05);
+    d = opSubtraction(d, d1);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, vec3(1.00,0.98,0.90), (1.0 - d) * mask);
+}
 
 // void mainImage( out vec4 fragColor, in vec2 fragCoord )
 void main()
@@ -1328,12 +1458,15 @@ void main()
     // mirror coords
     p.x = abs(p.x);
     
-    head(within(p, vec4(-0.75, 0.6, 0.75, -1.0)), col);
+    hat(p, col, origP);
+    head(within(p, vec4(-0.75, 0.55, 0.75, -1.0)), col);
     eyeOil(p, col);
     
     mouth(within(p, vec4(-0.3, -0.75, 0.3, -1.0)), col);
 
     nose(within(p, vec4(-0.1, -0.2, 0.1, -0.75)), col);   
+
+    crown(p, col, origP);
 
     thirdEye(within(p, vec4(-0.5, 0.5, 0.5, -0.29)), col, origP);  
 
@@ -1343,7 +1476,6 @@ void main()
 
     eye(within(p, vec4(0.13, -0.25, 0.63, -0.7)), col);
 
- 
     // test(origP, col);
 
 
