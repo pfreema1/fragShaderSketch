@@ -182,7 +182,7 @@ float returnTween4Dist(vec2 p, float t, float circleRadius) {
 
 float returnTween5Dist(vec2 p, float t, float circleRadius) {
     // t = normalized time
-    vec2 from = vec2(0.5, 0.5);
+    vec2 from = vec2(0.5, 0.32);
     vec2 to = vec2(0.5, -0.3);
     vec2 pos = mix(from, to, t);
     float d = sdCircle(p - pos, circleRadius);
@@ -205,12 +205,13 @@ mat2 rotate2d(float _angle){
 
 void makeSecondSwoop(vec2 p, inout float d, float loopTime, inout vec3 col, float time) {
     p -= vec2(0.28, 0.02);
+    // p -= vec2(0.58, 0.02);  // debug view
 
     for(int i = 0; i < 10; i++) {
         float d1 = 0.0;
         float margin = sin(float(i) + time) * 1.0;
         float modTime = fract((time + margin) / loopTime);
-        float circleRadius = 0.1 * (1.0 - (p.y));
+        float circleRadius = map(modTime, 0.0, 1.0, 0.0, 0.15);
 
         if(modTime < 0.5) {
             d1 = returnTween4Dist(p, linearStep(0.0, 0.5, modTime), circleRadius);
@@ -246,7 +247,7 @@ float returnTween2Dist(vec2 p, float t, float circleRadius) {
 float returnTween3Dist(vec2 p, float t, float circleRadius) {
     // t = normalized time
     vec2 from = vec2(0.5, 0.33);
-    vec2 to = vec2(0.66, -0.8);
+    vec2 to = vec2(0.66, -0.1);
     vec2 pos = mix(from, to, t);
     float d = sdCircle(p - pos, circleRadius);
     return d;
@@ -396,7 +397,7 @@ void eye(in vec2 p, inout vec3 col) {
 
     // add lines
     // only where bottom gear is showing
-    float lines = step(0.079, mod((p.x + iTime * 0.03) * 2.0, 0.1));
+    float lines = smoothstep(0.076, 0.079, mod((p.x + iTime * 0.03) * 2.0, 0.1));
     col = mix(col, vec3(0.0), lines * (1.0 - d));
 
 
@@ -426,7 +427,7 @@ void eye(in vec2 p, inout vec3 col) {
     col = mix(col, mixedCol, 1.0 - d);
 
     // top gear lines
-    lines = step(0.079, mod((p.x - iTime * 0.03) * 2.0, 0.1));
+    lines = smoothstep(0.076, 0.079, mod((p.x - iTime * 0.03) * 2.0, 0.1));
     col = mix(col, vec3(0.0), lines * (1.0 - d));
 
     //black bottom of top colored gear
@@ -784,6 +785,62 @@ void nose(in vec2 p, inout vec3 col) {
 
 }
 
+void upperThirdEyeOil(vec2 p, inout vec3 col, vec2 origP) {
+    float d = 0.0;
+    float d1 = 0.0;
+    float d2 = 0.0;
+    float d3 = 0.0;
+    float r = 0.0;
+    vec2 modP = vec2(0.0);
+    vec2 p1 = vec2(0.0);
+    vec3 mixedCol = vec3(0.0);
+    float modTime = 0.0;
+    float loopTime = 0.0;
+    vec2 pos1 = vec2(0.0);
+    vec2 pos2 = vec2(0.0);
+    vec2 mixedPos = vec2(0.0);
+    float isWithinTrapezoid = 0.0;
+    float mask = 0.0;
+    float mask1 = 0.0;
+    float mask2 = 0.0;
+    float m = 0.0;
+    float dropOffset = 0.5;
+
+    modP = within(origP, vec4(-0.24, 0.61, 0.7, -0.33));
+
+    d = sdBezier(modP, vec2(0.33, 0.59), vec2(0.61, 0.57), vec2(0.7, 0.26)) - 0.02;
+    // draw base oil
+    // d = smoothstep(0.0, AA, d);
+    // col = mix(col, blackOutlineColor, 1.0 - d);
+
+    loopTime = 2.0;
+    // draw drops
+    for(int i = 0; i < 5; i++) {
+        float margin = sin(0.4 * float(i) + iTime);
+        modTime = fract((iTime + margin) / loopTime);
+        modTime = map(modTime, 0.0, 1.0, 0.2, 0.9);
+        float remap = map(modTime, 0.0, 1.0, -1.0, 1.0);
+        float y = 1.0 - pow(abs(sin(PI * remap / 2.0)), 2.0);
+        float circleRadius = map(y, 0.0, 1.0, 0.0, 0.015);
+
+        float m = 1.0 - pow(abs(modTime), 8.5);
+        vec2 pos = vec2(modTime, m);
+        pos += vec2(-0.17, -0.42);
+        d1 = sdCircle(modP - pos, circleRadius);
+
+        // d1 = smoothstep(0.0, AA, d1);
+        // col = mix(col, vec3(1.0), 1.0 - d1);
+
+        d = opSmoothUnion(d, d1, 0.035);
+    }
+
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+
+    addGrid(modP, col);
+}
+
 void thirdEye(in vec2 p, inout vec3 col, vec2 origP) {
     float d = 0.0;
     float d1 = 0.0;
@@ -861,6 +918,7 @@ void thirdEye(in vec2 p, inout vec3 col, vec2 origP) {
     d = smoothstep(0.0, AA, d);
     mask = d;
     col = mix(col, blackOutlineColor, 1.0 - d);
+    upperThirdEyeOil(p, col, origP);
     // colored part
     d = sdCircle(p - vec2(0.5, 0.25), 0.36 * mask1);
     d1 = sdCircle(p - vec2(0.5, 0.25), 0.41 * mask1);
@@ -897,8 +955,6 @@ void thirdEye(in vec2 p, inout vec3 col, vec2 origP) {
     // mask it
     d2 += mask;
     d = opSmoothUnion(d, d2, 0.1);
-
-
     // color outer third eye oil
     d = smoothstep(0.0, AA, d);
     col = mix(col, blackOutlineColor, 1.0 - d);
@@ -1140,6 +1196,22 @@ void thirdEye(in vec2 p, inout vec3 col, vec2 origP) {
     
 }
 
+void littleDrop(vec2 p, inout vec3 col, float timeOffset) {
+    float loopTime = 1.0;
+    float modTime = fract((iTime + timeOffset)/loopTime);
+    float smoothFactor = map(modTime, 0.0, 1.0, 0.0, 0.17);
+    float yPos = map(modTime * modTime * modTime, 0.0, 1.0, 0.53, 0.15);
+    vec2 movingDripPos = vec2(0.51, yPos);
+
+
+    float d1 = sdCircle(p - vec2(0.51, 0.53), 0.02);
+    float d2 = sdCircle(p - movingDripPos, 0.02);
+    float d = opSmoothUnion(d1, d2, smoothFactor);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    // addGrid(p, col);
+}
+
 void test(vec2 p, inout vec3 col) {
     vec2 pos = vec2(0.0, 0.0);
     float loopTime = 3.0;
@@ -1200,10 +1272,10 @@ void eyeOil(vec2 p, inout vec3 col) {
     for(int i = 0; i < 12; i++) {
         float margin = sin(float(i) + time) * 1.0;
         modTime = fract((time + margin) / loopTime);
-        float s = 1.0; //smoothstep(0.0, 0.1, modP.y);
+        float s = smoothstep(0.1, 0.3, modP.y);
         float m = modP.y * modP.y * 1.5;
         circleRadius = map(m, 0.0, 1.0, 0.04, 0.005);
-        // circleRadius *= s;
+        circleRadius *= s;
         // circleRadius = 0.004;
         if(modTime < 0.333) {
             // tween 1
@@ -1231,14 +1303,19 @@ void eyeOil(vec2 p, inout vec3 col) {
     /////////////////////////////////////////////////////////////
     // bottom left swoop tween
     modP = within(p, vec4(-0.43, 0.09, 0.76, -1.0));
-    // addGrid(modP, col);
+    timeScale = 0.3;
+    time = iTime * timeScale;
     makeSecondSwoop(modP, d, loopTime, col, time);
-    // d = opSmoothUnion(d, d1, 0.01);
-    // draw oil
+    // addGrid(modP, col);
     d = smoothstep(0.0, AA, d);
     col = mix(col, blackOutlineColor, 1.0 - d);
+
+    ///////////////////////////////////////////////////////////////////////////
+    
     
 }
+
+
 
 // void mainImage( out vec4 fragColor, in vec2 fragCoord )
 void main()
@@ -1253,13 +1330,18 @@ void main()
     
     head(within(p, vec4(-0.75, 0.6, 0.75, -1.0)), col);
     eyeOil(p, col);
-    eye(within(p, vec4(0.13, -0.25, 0.63, -0.7)), col);
     
     mouth(within(p, vec4(-0.3, -0.75, 0.3, -1.0)), col);
 
     nose(within(p, vec4(-0.1, -0.2, 0.1, -0.75)), col);   
 
     thirdEye(within(p, vec4(-0.5, 0.5, 0.5, -0.29)), col, origP);  
+
+    littleDrop(within(origP, vec4(0.15, 0.13, 0.61, -0.37)), col, 0.3);
+
+    littleDrop(within(origP, vec4(-0.15, 0.13, -0.61, -0.37)), col, 0.0);
+
+    eye(within(p, vec4(0.13, -0.25, 0.63, -0.7)), col);
 
  
     // test(origP, col);
