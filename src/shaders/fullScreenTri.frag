@@ -12,13 +12,13 @@ uniform float mod8;
 uniform float mod9;
 
 /*
-    This code is ugly and inefficient, just like ur mum.  
+    -design from: https://dribbble.com/shots/10707556-Another-Dimension
+    -sdf functions from iq   
+    -
+
 */
 
-#define AA 0.005
-#define S(a, b, t) smoothstep(a, b, t)
-#define B(a, b, blur, t) S(a-blur, a+blur, t)*S(b+blur, b-blur, t)
-#define sat(x) clamp(x, 0., 1.)
+// #define AA 0.005
 #define PI 3.14159
 #define TAU 2.0 * PI
 #define gridThickness 0.05
@@ -32,6 +32,7 @@ vec3 gearCol2 = vec3(0.36,0.83,0.99);
 vec3 col = bgColor;
 float blackOutlineWidth = 0.02;
 vec3 mixedCol = vec3(0.0);
+float AA = 0.005;
 
 /*********************************************************
 **********************************************************
@@ -528,7 +529,6 @@ void head(in vec2 p, inout vec3 col) {
 }
 
 void mouth(in vec2 p, inout vec3 col) {
-    // vec3 mixedCol = vec3(0.0);
     float isInside = inside01(p);
 
     // light bg
@@ -536,15 +536,13 @@ void mouth(in vec2 p, inout vec3 col) {
     col = mix(col, mixedCol, isInside);
 
     // circle black bottom
-    float r = 0.37;
     vec2 pMod = vec2(p.x, p.y * 0.5);
-    float d = sdCircle(pMod - vec2(0.5, -0.2), r);
+    float d = sdCircle(pMod - vec2(0.5, -0.2), 0.37);
     d = smoothstep(0.0, AA, d);
     col = mix(col, blackOutlineColor, 1.0 - d);
 
     // circle color
-    r = 0.36;
-    d = sdCircle(pMod - vec2(0.5, -0.21), r);
+    d = sdCircle(pMod - vec2(0.5, -0.21), 0.36);
     d = smoothstep(0.0, AA, d);
     col = mix(col, vec3(0.91,0.54,0.36), 1.0 - d);
     
@@ -552,87 +550,66 @@ void mouth(in vec2 p, inout vec3 col) {
     // OIL
     /////////////////////////////////////////////////////////////////
     // oil pipe
-    r = 0.03;
-    float baseOilPipe = sdSegment(p, vec2(0.75, 0.9), vec2(0.75, 0.0)) - r;
+    d = sdSegment(p, vec2(0.75, 0.9), vec2(0.75, 0.0)) - 0.03;
 
     // setup oilBulge1 anim
-    float yPos = 0.0;
     float loopTime = 3.0;
     float modTime = mod(iTime, loopTime);
-    float moveMin = -0.2;
-    float moveMax = 0.5;
-    modTime = 1.0 - (modTime / loopTime); // normalize looptime to 0 -> 1
-    yPos = ((abs(moveMin) + abs(moveMax)) * modTime) + moveMin; // convert 0 -> 1 to new range
-    vec2 bulge1Pos = vec2(0.75, yPos);
-    // get sd of oilBulge1
-    r = 0.05 * isInside;
+    modTime = 1.0 - (modTime / loopTime); 
+    float yPos = ((abs(-0.2) + abs(0.5)) * modTime) + -0.2; 
     pMod = vec2(p.x, p.y * 0.4);
-    float oilBulge1 = sdSegment(pMod, bulge1Pos, bulge1Pos) - r;
-    d = opSmoothUnion(baseOilPipe, oilBulge1, 0.11);
+    float d1 = sdSegment(pMod, vec2(0.75, yPos), vec2(0.75, yPos)) - 0.05 * isInside;
+    d = opSmoothUnion(d, d1, 0.11);
 
    // setup oilBulge2 anim
-    float timeOffset = 1.0;
-    modTime = mod(iTime + timeOffset, loopTime);
+    modTime = mod(iTime + 1.0, loopTime);
     modTime = 1.0 - (modTime / loopTime);
-    yPos = ((abs(moveMin) + abs(moveMax)) * modTime) + moveMin; // convert 0 -> 1 to new range
-    vec2 bulge2Pos = vec2(0.75, yPos);
+    yPos = ((abs(-0.2) + abs(0.5)) * modTime) + -0.2; 
     
     // sd of oilbulge2
-    r = 0.03 * isInside;
-    float oilBulge2 = sdSegment(pMod, bulge2Pos, bulge2Pos) - r;
-    d = opSmoothUnion(d, oilBulge2, 0.11);
+    d1 = sdSegment(pMod, vec2(0.75, yPos), vec2(0.75, yPos)) - 0.03 * isInside;
+    d = opSmoothUnion(d, d1, 0.11);
 
     // setup oilBulge3 anim
-    timeOffset = 2.0;
-    modTime = mod(iTime + timeOffset, loopTime);
+    modTime = mod(iTime + 2.0, loopTime);
     modTime = 1.0 - (modTime / loopTime);
-    yPos = ((abs(moveMin) + abs(moveMax)) * modTime) + moveMin; // convert 0 -> 1 to new range
-    vec2 bulge3Pos = vec2(0.75, yPos);
+    yPos = ((abs(-0.2) + abs(0.5)) * modTime) + -0.2; 
     
     // sd of oilbulge3
-    r = 0.01 * isInside;
-    float oilBulge3 = sdSegment(pMod, bulge3Pos, bulge3Pos) - r;
-    d = opSmoothUnion(d, oilBulge3, 0.11);
+    d1 = sdSegment(pMod, vec2(0.75, yPos), vec2(0.75, yPos)) - 0.01 * isInside;
+    d = opSmoothUnion(d, d1, 0.11);
 
     //////////////////////////////////////////////////////////////
     // middle oil pipe
-    r = 0.01;
-    float middleOilPipe = sdSegment(p, vec2(0.5, 0.9), vec2(0.5, 0.0)) - r;
-    d = opSmoothUnion(d, middleOilPipe, 0.11);
+    d1 = sdSegment(p, vec2(0.5, 0.9), vec2(0.5, 0.0)) - 0.01;
+    d = opSmoothUnion(d, d1, 0.11);
 
     // middle bulge 1
     loopTime = 3.8;
     modTime = mod(iTime, loopTime);
     modTime = 1.0 - (modTime / loopTime);
-    yPos = ((abs(moveMin) + abs(moveMax)) * modTime) + moveMin;
-    bulge1Pos = vec2(0.5, yPos);
-    r = 0.01 * isInside;
-    oilBulge1 = sdSegment(pMod, bulge1Pos, bulge1Pos) - r;
-    d = opSmoothUnion(d, oilBulge1, 0.11);
+    yPos = ((abs(-0.2) + abs(0.5)) * modTime) + -0.2;
+    d1 = sdSegment(pMod, vec2(0.5, yPos), vec2(0.5, yPos)) - 0.01 * isInside;
+    d = opSmoothUnion(d, d1, 0.11);
 
     // middle bulge 2
-    timeOffset = 1.3;
-    modTime = mod(iTime + timeOffset, loopTime);
+    modTime = mod(iTime + 1.3, loopTime);
     modTime = 1.0 - (modTime / loopTime);
-    yPos = ((abs(moveMin) + abs(moveMax)) * modTime) + moveMin; // convert 0 -> 1 to new range
-    bulge2Pos = vec2(0.5, yPos);
+    yPos = ((abs(-0.2) + abs(0.5)) * modTime) + -0.2; 
+    // bulge2Pos = vec2(0.5, yPos);
 
     // sd of middle oilbulge2
-    r = 0.05 * isInside;
-    oilBulge2 = sdSegment(pMod, bulge2Pos, bulge2Pos) - r;
-    d = opSmoothUnion(d, oilBulge2, 0.11);
+    d1 = sdSegment(pMod, vec2(0.5, yPos), vec2(0.5, yPos)) - 0.05 * isInside;
+    d = opSmoothUnion(d, d1, 0.11);
 
     // setup middle oilBulge3 anim
-    timeOffset = 2.6;
-    modTime = mod(iTime + timeOffset, loopTime);
+    modTime = mod(iTime + 2.6, loopTime);
     modTime = 1.0 - (modTime / loopTime);
-    yPos = ((abs(moveMin) + abs(moveMax)) * modTime) + moveMin; // convert 0 -> 1 to new range
-    bulge3Pos = vec2(0.5, yPos);
+    yPos = ((abs(-0.2) + abs(0.5)) * modTime) + -0.2; 
     
     // sd of middle oilbulge3
-    r = 0.03 * isInside;
-    oilBulge3 = sdSegment(pMod, bulge3Pos, bulge3Pos) - r;
-    d = opSmoothUnion(d, oilBulge3, 0.11);
+    d1 = sdSegment(pMod, vec2(0.5, yPos), vec2(0.5, yPos)) - 0.03 * isInside;
+    d = opSmoothUnion(d, d1, 0.11);
 
     //////////////////////////////////////////////////////////
     // TOP OIL LINE
@@ -640,16 +617,14 @@ void mouth(in vec2 p, inout vec3 col) {
     loopTime = 3.0;
     modTime = mod(iTime, loopTime);
     modTime /= loopTime;
-    r = 0.04;
-    float m = (abs(sin(modTime * TAU)) + 0.2) * 0.3;//remap(sin(modTime * TAU), -1.0, 1.0, 0.13, 0.4);
-    float topOilLine = sdSegment(p, vec2(0.0, 0.96), vec2(1.0, 0.96)) - r;
-    d = opSmoothUnion(d, topOilLine, m);
+    float m = (abs(sin(modTime * TAU)) + 0.2) * 0.3;
+    d1 = sdSegment(p, vec2(0.0, 0.96), vec2(1.0, 0.96)) - 0.04;
+    d = opSmoothUnion(d, d1, m);
 
     //////////////////////////////////////////////
     // SIDE OIL LINE
-    r = 0.015;
-    float sideOilLine = sdSegment(p, vec2(1.0, 1.0), vec2(1.0, 0.0)) - r;
-    d = opSmoothUnion(d, sideOilLine, 0.11);
+    d1 = sdSegment(p, vec2(1.0, 1.0), vec2(1.0, 0.0)) - 0.015;
+    d = opSmoothUnion(d, d1, 0.11);
 
     // draw oil
     d = smoothstep(0.0, AA, d);
@@ -1821,34 +1796,26 @@ void main()
     vec2 origP = vec2(p.x, p.y);
     // mirror coords
     p.x = abs(p.x);
+
+    // AA = map(sin(iTime * 3.0), -1.0, 1.0, 0.005, 0.01);
+    float m = length(p) * 0.05 * abs(sin(iTime * 1.0));
+    AA = 0.005 + m;
     
     bg(p, col, origP);
     backBars(p, col, origP);
     backClouds(p, col, origP);
-
     hat(p, col, origP);
     head(within(p, vec4(-0.75, 0.55, 0.75, -1.0)), col);
     eyeOil(p, col);
-    
     mouth(within(p, vec4(-0.3, -0.75, 0.3, -1.0)), col);
-
     nose(within(p, vec4(-0.1, -0.2, 0.1, -0.75)), col);   
-
     crown(p, col, origP);
-
-
     thirdEyeRays(p, col, origP);
-
     thirdEye(within(p, vec4(-0.5, 0.5, 0.5, -0.29)), col, origP);  
-
     littleDrop(within(origP, vec4(0.15, 0.13, 0.61, -0.37)), col, 0.3);
-
     littleDrop(within(origP, vec4(-0.15, 0.13, -0.61, -0.37)), col, 0.0);
-
     eye(within(p, vec4(0.13, -0.25, 0.63, -0.7)), col);
-
     // test(origP, col);
-
 
 	// fragColor = vec4(col,1.0);
     gl_FragColor = vec4(col, 1.0);
