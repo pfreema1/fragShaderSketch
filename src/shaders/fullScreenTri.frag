@@ -217,7 +217,7 @@ void makeSecondSwoop(vec2 p, inout float d, float loopTime, inout vec3 col, floa
     p -= vec2(0.28, 0.02);
     // p -= vec2(0.58, 0.02);  // debug view
 
-    for(int i = 0; i < 10; i++) {
+    for(int i = 0; i < 5; i++) {
         float d1 = 0.0;
         float margin = sin(float(i) + time) * 1.0;
         float modTime = fract((time + margin) / loopTime);
@@ -776,7 +776,7 @@ void upperThirdEyeOil(vec2 p, inout vec3 col, vec2 origP) {
 
     loopTime = 4.0;
     // draw drops
-    for(int i = 0; i < 7; i++) {
+    for(int i = 0; i < 3; i++) {
         float margin = sin(0.4 * float(i) + iTime);
         modTime = fract((iTime + margin) / loopTime);
         modTime = map(modTime, 0.0, 1.0, 0.2, 0.85);
@@ -1174,18 +1174,9 @@ void littleDrop(vec2 p, inout vec3 col, float timeOffset) {
 }
 
 void test(vec2 p, inout vec3 col) {
-    vec2 pos = vec2(0.0, 0.0);
-    float loopTime = 3.0;
-    float modTime = fract(iTime / loopTime);
-
-    modTime = map(modTime, 0.0, 1.0, 0.0, TAU);
-    float r = 0.5;
-    pos.x = sin(modTime) * r;
-    pos.y = cos(modTime) * r;
-
-    float d = sdCircle(p - pos, 0.05);
-    d = smoothstep(0.0, AA, d);
-    col = mix(col, vec3(1.0), 1.0 - d);
+    float d = length(p);
+    d = step(1.0, d);
+    col = mix(col, blackOutlineColor, d);
 }
 
 void eyeOil(vec2 p, inout vec3 col) {
@@ -1230,7 +1221,7 @@ void eyeOil(vec2 p, inout vec3 col) {
     // DRAW CIRLCLES THROUGH TWEEN
     loopTime = 3.0;
     // position circles
-    for(int i = 0; i < 12; i++) {
+    for(int i = 0; i < 6; i++) {
         float margin = sin(float(i) + time) * 1.0;
         modTime = fract((time + margin) / loopTime);
         float s = smoothstep(0.1, 0.3, modP.y);
@@ -1422,7 +1413,7 @@ void crown(vec2 p, inout vec3 col, vec2 origP) {
     vec2 from = vec2(0.2, 1.3);
     vec2 to = vec2(0.2, 0.17);
     loopTime = 4.0;
-    for(int i = 0; i < 20; i++) {
+    for(int i = 0; i < 10; i++) {
         float time = iTime * 0.5;
         float margin = cos(0.25 * float(i) + time);
         modTime = fract((time + margin) / loopTime);
@@ -1815,7 +1806,7 @@ void main()
     littleDrop(within(origP, vec4(0.15, 0.13, 0.61, -0.37)), col, 0.3);
     littleDrop(within(origP, vec4(-0.15, 0.13, -0.61, -0.37)), col, 0.0);
     eye(within(p, vec4(0.13, -0.25, 0.63, -0.7)), col);
-    // test(origP, col);
+    test(origP, col);
 
 	// fragColor = vec4(col,1.0);
     gl_FragColor = vec4(col, 1.0);
