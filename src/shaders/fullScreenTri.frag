@@ -470,44 +470,34 @@ void eye(in vec2 p, inout vec3 col) {
 void head(in vec2 p, inout vec3 col) {
 
     // black outline
-    // vec2 vec2(0.5, 0.0) = vec2(0.5, 0.0);
-    // vec2 vec2(0.5, 0.5) = vec2(0.5, 0.5);
-    // float r = 0.5;
 	float d = sdSegment(p, vec2(0.5, 0.5), vec2(0.5, 0.0)) - 0.5;
     d = smoothstep(0.0, AA,d);
     col = mix(col, blackOutlineColor, 1.0 - d);
 
     // head goo
     d = sdSegment(p, vec2(0.5, 0.5), vec2(0.5, 0.0)) - 0.5 * (1.0 - blackOutlineWidth);
-    //d *= sdSegment(p, vec2(0.5, 0.5), vec2(0.5, 0.0)) - r * 0.5;
     d = smoothstep(0.0, AA, d);
     col = mix(col, headGooColor, 1.0 - d);
 
     ////////////////////////////////////////////////
     // head black
     // head bg outline color
-	// r = 0.44;
+
     float d1 = sdSegment(p, vec2(0.5, 0.5), vec2(0.5, 0.0)) - 0.44;
     
-    // bump
-    // r = 0.03;
+
     float d2 = sdSegment(p, vec2(0.85, 0.2), vec2(0.8, 0.2)) - 0.03;
 	d = opSmoothUnion(d1, d2, 0.2);
 	
     
-    // bump
-    // r = 0.005;
+ 
     d1 = sdSegment(p, vec2(0.8,0.7), vec2(0.8,0.7)) - 0.005;
     d = opSmoothUnion(d, d1, 0.3);
     
 
-    // subtract bump
-    // r = 0.005;
     d1 = sdSegment(p, vec2(0.72, 0.92), vec2(0.72, 0.92)) - 0.005;
     d = opSmoothSubtraction(d1, d, 0.15);
 
-    // subtract bump
-    // r = 0.005;
     d1 = sdSegment(p, vec2(0.92, 0.62), vec2(0.92, 0.62)) - 0.005;
     d = opSmoothSubtraction(d1, d, 0.1);
 
@@ -517,30 +507,17 @@ void head(in vec2 p, inout vec3 col) {
     
     // ////////////////////////////////////////////////
     // head main color
-
-    // head bg outline color
-	// r = 0.43;
     d = sdSegment(p, vec2(0.5, 0.5), vec2(0.5, 0.0)) - 0.43;
-    
-    // bump
-    // r = 0.02;
+
     d1 = sdSegment(p, vec2(0.85, 0.2), vec2(0.8, 0.2)) - 0.02;
     d = opSmoothUnion(d, d1, 0.2);
-	
-    
-    // bump
-    // r = 0.004;
+
     d1 = sdSegment(p, vec2(0.8,0.7), vec2(0.8,0.7)) - 0.004;
     d = opSmoothUnion(d, d1, 0.3);
-    
 
-    // subtract bump
-    // r = 0.004;
     d1 = sdSegment(p, vec2(0.72, 0.92), vec2(0.72, 0.92)) - 0.004;
     d = opSmoothSubtraction(d1, d, 0.15);
 
-    // subtract bump
-    // r = 0.004;
     d1 = sdSegment(p, vec2(0.92, 0.62), vec2(0.92, 0.62)) - 0.004;
     d = opSmoothSubtraction(d1, d, 0.1);
 
