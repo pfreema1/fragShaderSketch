@@ -1175,7 +1175,7 @@ void littleDrop(vec2 p, inout vec3 col, float timeOffset) {
 
 void test(vec2 p, inout vec3 col) {
     float d = length(p);
-    d = step(1.0, d);
+    d = smoothstep(0.95, 1.0, d);
     col = mix(col, blackOutlineColor, d);
 }
 
