@@ -702,32 +702,32 @@ void nose(in vec2 p, inout vec3 col) {
     ////////////////////////////////////////////////////
     // black bottom
     modP = vec2(p.x, p.y * 3.0);
-    float r = 0.5;
-    d1 = sdSegment(modP, vec2(0.5, 0.9), vec2(0.5, 0.4)) - r;
-    float subtractR = 0.07;
-    d2 = sdSegment(p, vec2(0.67, -0.1), vec2(0.5, -0.1)) - subtractR;
+    // float r = 0.5;
+    d1 = sdSegment(modP, vec2(0.5, 0.9), vec2(0.5, 0.4)) - 0.5;
+    // float subtractR = 0.07;
+    d2 = sdSegment(p, vec2(0.67, -0.1), vec2(0.5, -0.1)) - 0.07;
 
     d3 = opSmoothSubtraction(d2, d1, 0.5);
 
-    r = 0.05;
-    d = sdSegment(p, vec2(0.93, 0.1), vec2(0.93, 0.02)) - r;
+    // r = 0.05;
+    d = sdSegment(p, vec2(0.93, 0.1), vec2(0.93, 0.02)) - 0.05;
     d = opSmoothUnion(d, d3, 0.01);
 
-    r = 0.005;
-    d1 = sdSegment(p, vec2(0.7, -0.01), vec2(1.4, -0.01)) - r;
+    // r = 0.005;
+    d1 = sdSegment(p, vec2(0.7, -0.01), vec2(1.4, -0.01)) - 0.005;
     float loopTime = 2.0;
     float modTime = mod(iTime, loopTime) / loopTime;
     float smoothVal = (abs(sin(modTime * TAU))) * 0.085;
     d = opSmoothUnion(d, d1, smoothVal * isInsideY);
 
     // middle bottom pipe
-    r = 0.05;
-    d2 = sdSegment(p, vec2(0.5, 0.1), vec2(0.5, -0.01)) - r;
+    // r = 0.05;
+    d2 = sdSegment(p, vec2(0.5, 0.1), vec2(0.5, -0.01)) - 0.05;
     d = opSmoothUnion(d, d2, 0.09);
 
     // middle bottom pipe connector
-    r = 0.005;
-    d1 = sdSegment(p, vec2(0.4, -0.01), vec2(0.6, -0.01)) - r;
+    // r = 0.005;
+    d1 = sdSegment(p, vec2(0.4, -0.01), vec2(0.6, -0.01)) - 0.005;
     loopTime = 2.0;
     modTime = mod(iTime + 0.5, loopTime) / loopTime;
     smoothVal = (abs(sin(modTime * TAU)) + 0.07) * 0.1;
@@ -739,9 +739,9 @@ void nose(in vec2 p, inout vec3 col) {
     ///////////////////////////////////////////////////
     // nose tubes
 
-    r = 0.13;
+    // r = 0.13;
     vec2 pMod = vec2(p.x * 0.9, p.y * 2.5);
-    d = sdSegment(pMod, vec2(0.59, 0.69), vec2(0.59, 0.37)) - r;
+    d = sdSegment(pMod, vec2(0.59, 0.69), vec2(0.59, 0.37)) - 0.13;
     mixedCol = mix(vec3(0.40,0.36,0.67), vec3(0.35,0.84,0.99), smoothstep(0.54, 0.85, p.x));
     d = smoothstep(0.0, AA, d);
     col = mix(col, mixedCol, 1.0 - d);
