@@ -1387,17 +1387,18 @@ void crown(vec2 p, inout vec3 col, vec2 origP) {
     modP = within(origP, vec4(-1.0, 1.0, 1.0, -0.52));
 
 
-    addGrid(modP, col);
+    // addGrid(modP, col);
 
     // black bottom
     d = sdBox(modP - vec2(0.5, 0.91), vec2(0.1, 0.44), 0.0);
     d = smoothstep(0.0, AA, d);
+    mask1 = 1.0 - d;
     col = mix(col, blackOutlineColor, 1.0 - d);
     // color bg
     d = sdBox(modP - vec2(0.5, 0.91), vec2(0.095, 0.405), 0.04);
     d = smoothstep(0.0, AA, d);
     mask = 1.0 - d;
-    mixedCol = mix(vec3(0.61,0.80,0.72), vec3(0.90,0.76,0.34), map(modP.y, 0.4, 1.0, 0.0, 1.0));
+    mixedCol = mix(vec3(0.61,0.80,0.72), vec3(0.90,0.76,0.34), map(modP.y, 0.60 * abs(sin(iTime * 1.5)), 0.67, 0.0, 1.0));
     col = mix(col, mixedCol, 1.0 - d);
 
     // middle pipe
@@ -1413,15 +1414,7 @@ void crown(vec2 p, inout vec3 col, vec2 origP) {
     col = mix(col, vec3(0.90,0.63,0.34), 1.0 - d);
 
 
-    // bottom circle
-    modTime = fract((iTime) / loopTime);
-    m = 0.25 + sin(modTime * TAU) * 0.02;
-    d = sdCircle(p - vec2(0.0, m), 0.05);
-    d = smoothstep(0.0, AA, d);
-    col = mix(col, blackOutlineColor, 1.0 - d);
-    d = sdCircle(p - vec2(0.0, m), 0.045);
-    d = smoothstep(0.0, AA, d);
-    col = mix(col, vec3(0.89,0.96,0.91), 1.0 - d);
+    
 
     // top circle
     float radiusM = abs(sin(modTime * TAU)) * 0.02;
@@ -1432,6 +1425,18 @@ void crown(vec2 p, inout vec3 col, vec2 origP) {
     d = smoothstep(0.0, AA, d);
     mixedCol = returnDottedCol(vec2(p.x * 4.0, p.y * 2.0), vec3(0.91,0.55,0.37), vec3(0.84,0.36,0.18));
     col = mix(col, mixedCol, 1.0 - d);
+
+    // top dotted color
+    d = sdCircle(p - vec2(0.2, 1.0), 0.15);
+    d = smoothstep(0.0, AA, d);
+    mixedCol = mix(vec3(0.73,0.78,0.61), vec3(0.44,0.80,0.92), map(p.y, 0.9, 1.0, 0.0, 1.0));
+    mixedCol = returnDottedCol(vec2(p.x * 4.0, p.y * 2.0), mixedCol, vec3(0.44,0.21,0.68));
+    col = mix(col, mixedCol, (1.0 - d) * mask);
+
+    // black under diamond
+    d = sdCircle(p - vec2(0.17, 0.67), 0.13);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, (1.0 - d) * mask);
 
     // diamond black bottom
     d = sdCross(origP - vec2(0.0, 0.84), vec2(0.52, 0.33), 0.37);
@@ -1445,6 +1450,388 @@ void crown(vec2 p, inout vec3 col, vec2 origP) {
     d = opSubtraction(d, d1);
     d = smoothstep(0.0, AA, d);
     col = mix(col, vec3(1.00,0.98,0.90), (1.0 - d) * mask);
+
+    // hat cover up part
+    // black bottom
+    d = sdSegment(p, vec2(0.0, -0.10), vec2(-0.26, -0.93)) - 0.76;
+    d1 = sdSegment(p, vec2(0.0, -0.205), vec2(-0.26, -0.93)) - 0.745;
+    d = opSubtraction(d1, d);
+    d = smoothstep(0.0, AA, d); 
+    col = mix(col, blackOutlineColor, (1.0 - d) * mask);
+    // dotted color
+    d = sdSegment(p, vec2(0.0, -0.115), vec2(-0.26, -0.93)) - 0.76;
+    d1 = sdSegment(p, vec2(0.0, -0.19), vec2(-0.26, -0.93)) - 0.745;
+    d = opSubtraction(d1, d);
+    d = smoothstep(0.0, AA, d); 
+    mixedCol = returnDottedCol(vec2(p.x * 4.0, p.y * 2.0), vec3(0.91,0.75,0.34), vec3(0.82,0.44,0.12));
+    col = mix(col, mixedCol, (1.0 - d) * mask);
+
+    // crown oil
+    vec2 from = vec2(0.2, 1.3);
+    vec2 to = vec2(0.2, 0.17);
+    loopTime = 4.0;
+    for(int i = 0; i < 20; i++) {
+        float time = iTime * 0.5;
+        float margin = cos(0.25 * float(i) + time);
+        modTime = fract((time + margin) / loopTime);
+        float scale = 0.01 * abs(sin(modTime * TAU * 2.0)) + 0.01;
+        pos1 = mix(from, to, modTime);
+        d1 = sdCircle(p - pos1, scale);
+
+        if(i != 0) {
+            d = opSmoothUnion(d, d1, 0.02 * abs(sin(iTime)) + 0.03); 
+        } else {
+            d = d1;
+        }
+    }
+
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, (1.0 - d) * mask1);
+
+    // middle oil line circles
+    from = vec2(0.0, 1.3);
+    to = vec2(0.0, 0.17);
+    loopTime = 4.0;
+    for(int i = 0; i < 20; i++) {
+        float time = (iTime + 3.5) * 0.4;
+        float margin = cos(float(i) + time);
+        modTime = fract((time + margin) / loopTime);
+        float scale = 0.005 * abs(sin(modTime * TAU * 2.0)) + 0.005;
+        pos1 = mix(from, to, modTime);
+        d1 = sdCircle(p - pos1, scale);
+
+        if(i != 0) {
+            d = opSmoothUnion(d, d1, 0.02 * abs(sin(iTime)) + 0.01); 
+        } else {
+            d = d1;
+        }
+    }
+
+    // line
+    d1 = sdSegment(p, vec2(0.0, 1.0), vec2(0.0, 0.26)) - 0.0005;
+    d = opSmoothUnion(d, d1, 0.02 * abs(sin(iTime)) + 0.01); 
+
+    mask2 = mask1 * step(p.y, 0.78);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, (1.0 - d) * mask2);
+
+    // bottom circle
+    modTime = fract((iTime) / loopTime);
+    m = 0.25 + sin(modTime * TAU) * 0.02;
+    d = sdCircle(p - vec2(0.0, m), 0.05);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    d = sdCircle(p - vec2(0.0, m), 0.045);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, vec3(0.89,0.96,0.91), 1.0 - d);
+}
+
+void backClouds(vec2 p, inout vec3 col, vec2 origP) {
+    float d = 0.0;
+    float d1 = 0.0;
+    float d2 = 0.0;
+    float d3 = 0.0;
+    float r = 0.0;
+    vec2 modP = vec2(0.0);
+    vec2 p1 = vec2(0.0);
+    vec3 mixedCol = vec3(0.0);
+    float modTime = 0.0;
+    float loopTime = 0.0;
+    vec2 pos1 = vec2(0.0);
+    vec2 pos2 = vec2(0.0);
+    vec2 mixedPos = vec2(0.0);
+    float isWithinTrapezoid = 0.0;
+    float mask = 0.0;
+    float mask1 = 0.0;
+    float mask2 = 0.0;
+    float m = 0.0;
+    float dropOffset = 0.5;
+
+    // top black bottom
+    vec2 pointA = vec2(0.0, 0.0);
+    vec2 pointB = vec2(2.0, 1.8);
+    d = sdSegment(p, pointA, pointB) - 0.09;
+    float h = dot(p - pointA, pointB - pointA);
+    float time = -iTime;
+    m = (0.04 + 0.04 * sin(2.0 * PI * h + (time * 2.0)/2.0));
+    m += (0.1 + 0.05 * sin(1.2 * PI * h + (time * 4.0)/10.0));
+    m += (0.01 + 0.02 * sin(2.0 * PI * h + (time * 4.0)/2.0));
+    // m += (0.01 + 0.01 * sin(6.0 * PI * h + (time * 4.0)/2.0));
+    // keep adding waves till it looks good
+    d = d - m;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    // more top black bottom
+    pointA = vec2(0.0, -0.3);
+    pointB = vec2(2.0, 1.5);
+    d = sdSegment(p, pointA, pointB) - 0.09;
+    h = dot(p - pointA, pointB - pointA);
+    time = -iTime;
+    m = (0.04 + 0.04 * sin(2.0 * PI * h + (time * 2.0)/2.0));
+    m += (0.1 + 0.05 * sin(1.2 * PI * h + (time * 4.0)/10.0));
+    m += (0.01 + 0.02 * sin(2.0 * PI * h + (time * 4.0)/2.0));
+    // m += (0.01 + 0.01 * sin(6.0 * PI * h + (time * 4.0)/2.0));
+    // keep adding waves till it looks good
+    d = d - m;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    // top color
+    pointA = vec2(0.0, 0.0);
+    pointB = vec2(2.0, 1.8);
+    d = sdSegment(p, pointA, pointB) - 0.03;
+    h = dot(p - pointA, pointB - pointA);
+    time = -iTime;
+    m = (0.04 + 0.01 * sin(2.0 * PI * h + (time * 2.0)/2.0));
+    m += (0.1 + 0.02 * sin(1.2 * PI * h + (time * 4.0)/10.0));
+    m += (0.01 + 0.03 * sin(2.0 * PI * h + (time * 4.0)/2.0));
+    // m += (0.01 + 0.01 * sin(6.0 * PI * h + (time * 4.0)/2.0));
+    // keep adding waves till it looks good
+    d = d - m;
+    d = smoothstep(0.0, AA, d);
+    mixedCol = mix(vec3(0.52,0.87,0.96), vec3(0.95,0.97,0.91), p.x);
+    col = mix(col, mixedCol, 1.0 - d);
+
+    // dotted back wave
+    pointA = vec2(0.0, -1.5);
+    pointB = vec2(2.0, 0.8);
+    d = sdSegment(p, pointA, pointB) - 0.03;
+    h = dot(p - pointA, pointB - pointA);
+    time = -iTime;
+    m = (0.04 + 0.01 * sin(2.0 * PI * h + (time * 2.0)/2.0));
+    m += (0.1 + 0.02 * sin(1.2 * PI * h + (time * 4.0)/10.0));
+    m += (0.01 + 0.03 * sin(2.0 * PI * h + (time * 4.0)/2.0));
+    m += (0.1 + 0.1 * sin(0.5 * PI * h + (time * 4.0)/2.0));
+    // m += (0.01 + 0.01 * sin(6.0 * PI * h + (time * 4.0)/2.0));
+    // keep adding waves till it looks good
+    d = d - m;
+    d = smoothstep(0.0, AA, d);
+    mixedCol = mix(col, vec3(0.90,0.76,0.34), map(origP.y, -1.0, 1.0, 0.0, 1.0));
+    mixedCol = returnDottedCol(vec2(p.x * 4.0, p.y * 2.0), mixedCol, vec3(0.81,0.58,0.46));
+    col = mix(col, mixedCol, 1.0 - d);
+
+    // black
+    // pointA = vec2(0.0, -2.0);
+    // pointB = vec2(2.0, 0.5);
+    // d = sdSegment(p, pointA, pointB) - 0.03;
+    // h = dot(p - pointA, pointB - pointA);
+    // time = -iTime + 2.0;
+    // m = (0.04 + 0.01 * sin(2.0 * PI * h + (time * 2.0)/4.0));
+    // m += (0.1 + 0.02 * sin(1.2 * PI * h + (time * 4.0)/10.0));
+    // m += (0.01 + 0.03 * sin(2.0 * PI * h + (time * 4.0)/3.0));
+    // // m += (0.01 + 0.01 * sin(6.0 * PI * h + (time * 4.0)/2.0));
+    // // keep adding waves till it looks good
+    // d = d - m;
+    // d = smoothstep(0.0, AA, d);
+    // col = mix(col, blackOutlineColor, 1.0 - d);
+
+    // back block black
+    d = sdBox(origP - vec2(0.0, -1.0), vec2(2.0, 0.5), 0.0);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    // back block color
+    d = sdBox(origP - vec2(0.0, -1.0), vec2(2.0, 0.49), 0.0);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, vec3(0.90,0.76,0.34), 1.0 - d);
+    // back block black
+    d = sdBox(origP - vec2(0.0, -1.05), vec2(2.0, 0.5), 0.0);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    // back block color
+    d = sdBox(origP - vec2(0.0, -1.05), vec2(2.0, 0.49), 0.0);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, vec3(0.90,0.76,0.34), 1.0 - d);
+    // back block black
+    d = sdBox(origP - vec2(0.0, -1.2), vec2(2.0, 0.5), 0.0);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    // back block color
+    d = sdBox(origP - vec2(0.0, -1.2), vec2(2.0, 0.49), 0.0);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, vec3(0.90,0.76,0.34), 1.0 - d);
+    // back block black
+    d = sdBox(origP - vec2(0.0, -1.45), vec2(2.0, 0.5), 0.0);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    // back block color
+    d = sdBox(origP - vec2(0.0, -1.45), vec2(2.0, 0.49), 0.0);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, vec3(0.90,0.76,0.34), 1.0 - d);
+
+    // cloud
+    pointA = vec2(0.0, -2.7);
+    pointB = vec2(2.0, 0.5);
+    d = sdSegment(p, pointA, pointB) - 0.3;
+    h = dot(p - pointA, pointB - pointA);
+    time = -iTime + 2.0;
+    m = (0.04 + 0.01 * sin(1.3 * PI * h + (time * 2.0)/4.0));
+    m += (0.1 + 0.02 * sin(1.2 * PI * h + (time * 4.0)/10.0));
+    m += (0.01 + 0.03 * sin(1.5 * PI * h + (time * 4.0)/3.0));
+    m += (0.1 + 0.05 * sin(1.0 * PI * h + (time * 4.0)/2.0));
+    // keep adding waves till it looks good
+    d = d - m;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    // cloud
+    pointA = vec2(0.0, -2.7);
+    pointB = vec2(2.0, 0.5);
+    d = sdSegment(p, pointA, pointB) - 0.29;
+    h = dot(p - pointA, pointB - pointA);
+    time = -iTime + 2.0;
+    m = (0.04 + 0.01 * sin(1.3 * PI * h + (time * 2.0)/4.0));
+    m += (0.1 + 0.02 * sin(1.2 * PI * h + (time * 4.0)/10.0));
+    m += (0.01 + 0.03 * sin(1.5 * PI * h + (time * 4.0)/3.0));
+    m += (0.1 + 0.05 * sin(1.0 * PI * h + (time * 4.0)/2.0));
+    // keep adding waves till it looks good
+    d = d - m;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, vec3(0.45,0.87,0.97), 1.0 - d);
+    // dottted
+    pointA = vec2(0.0, -2.8);
+    pointB = vec2(2.0, -0.24);
+    d = sdSegment(p, pointA, pointB) - 0.29;
+    h = dot(p - pointA, pointB - pointA);
+    time = -iTime + 2.0;
+    m = (0.04 + 0.01 * sin(2.0 * PI * h + (time * 2.0)/4.0));
+    m += (0.1 + 0.02 * sin(1.2 * PI * h + (time * 4.0)/10.0));
+    m += (0.01 + 0.03 * sin(2.0 * PI * h + (time * 4.0)/3.0));
+    // m += (0.01 + 0.01 * sin(6.0 * PI * h + (time * 4.0)/2.0));
+    // keep adding waves till it looks good
+    d = d - m;
+    d = smoothstep(0.0, AA, d);
+    mixedCol = mix(vec3(0.44,0.86,0.98),vec3(0.91,0.96,0.91), p.x);
+    mixedCol = returnDottedCol(vec2(p.x * 4.0, p.y * 2.0), col, vec3(0.23,0.36,0.68));
+    col = mix(col, mixedCol, 1.0 - d);
+
+    // front dark cloud - black bottom
+    pointA = vec2(0.0, -3.0);
+    pointB = vec2(2.0, -0.24);
+    d = sdSegment(p, pointA, pointB) - 0.29;
+    h = dot(p - pointA, pointB - pointA);
+    time = -iTime + 3.0;
+    m = (0.04 + 0.01 * sin(2.0 * PI * h + (time * 2.0)/2.0));
+    m += (0.1 + 0.02 * sin(1.2 * PI * h + (time * 4.0)/10.0));
+    m += (0.01 + 0.03 * sin(2.0 * PI * h + (time * 4.0)/2.0));
+    m += (0.1 + 0.1 * sin(0.5 * PI * h + (time * 4.0)/2.0));
+    // keep adding waves till it looks good
+    d = d - m;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    // front dark cloud - color
+    pointA = vec2(0.0, -3.0);
+    pointB = vec2(2.0, -0.24);
+    d = sdSegment(p, pointA, pointB) - 0.28;
+    h = dot(p - pointA, pointB - pointA);
+    time = -iTime + 3.0;
+    m = (0.04 + 0.01 * sin(2.0 * PI * h + (time * 2.0)/2.0));
+    m += (0.1 + 0.02 * sin(1.2 * PI * h + (time * 4.0)/10.0));
+    m += (0.01 + 0.03 * sin(2.0 * PI * h + (time * 4.0)/2.0));
+    m += (0.1 + 0.1 * sin(0.5 * PI * h + (time * 4.0)/2.0));
+    // keep adding waves till it looks good
+    d = d - m;
+    d = smoothstep(0.0, AA, d);
+    mixedCol = mix(vec3(0.90,0.54,0.38),vec3(0.63,0.30,0.60), 1.0 - map(p.x, 1.0, 0.48, 0.0, 1.0));
+    col = mix(col, mixedCol, 1.0 - d);
+    
+}
+
+void thirdEyeRays(vec2 p, inout vec3 col, vec2 origP) {
+    float d = 0.0;
+    float d1 = 0.0;
+    float d2 = 0.0;
+    float d3 = 0.0;
+    float r = 0.0;
+    vec2 modP = vec2(0.0);
+    vec2 p1 = vec2(0.0);
+    vec3 mixedCol = vec3(0.0);
+    float modTime = 0.0;
+    float loopTime = 0.0;
+    vec2 pos1 = vec2(0.0);
+    vec2 pos2 = vec2(0.0);
+    vec2 mixedPos = vec2(0.0);
+    float isWithinTrapezoid = 0.0;
+    float mask = 0.0;
+    float mask1 = 0.0;
+    float mask2 = 0.0;
+    float m = 0.0;
+    float dropOffset = 0.5;
+
+    // black bottom
+    modP = vec2(p.x, p.y);
+    modP = rotate2d(-0.76) * modP;
+    d = sdBox(modP - vec2(0.1, 1.0), vec2(0.07, 0.75), -0.8);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    // color bottom
+    d = sdBox(modP - vec2(0.1, 1.0), vec2(0.06, 0.75), -0.8);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, vec3(0.91,0.54,0.36), 1.0 - d);
+
+    // middle black bottom
+    d = sdBox(modP - vec2(0.1, 1.0), vec2(0.03, 0.75), -0.8);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    // middle color 0.76 - 1.0
+    d = sdBox(modP - vec2(0.1, 1.0), vec2(0.018, 0.75), -0.8);
+    d = smoothstep(0.0, AA, d);
+    mixedCol = mix(vec3(0.51,0.20,0.67), vec3(0.89,0.51,0.40), map(modP.y, 0.22, 0.25 * abs(sin(iTime * 6.0)) + 0.76, 0.0, 1.0));
+    col = mix(col, mixedCol, 1.0 - d);
+}
+
+void backBars(vec2 p, inout vec3 col, vec2 origP) {
+    float d = 0.0;
+    float d1 = 0.0;
+    float d2 = 0.0;
+    float d3 = 0.0;
+    float r = 0.0;
+    vec2 modP = vec2(0.0);
+    vec2 p1 = vec2(0.0);
+    vec3 mixedCol = vec3(0.0);
+    float modTime = 0.0;
+    float loopTime = 0.0;
+    vec2 pos1 = vec2(0.0);
+    vec2 pos2 = vec2(0.0);
+    vec2 mixedPos = vec2(0.0);
+    float isWithinTrapezoid = 0.0;
+    float mask = 0.0;
+    float mask1 = 0.0;
+    float mask2 = 0.0;
+    float m = 0.0;
+    float dropOffset = 0.5;
+
+    // black bottom
+    d = sdBox(p - vec2(0.83, 0.81), vec2(0.91, 0.07), -0.8);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    // dotted color
+    d = sdBox(p - vec2(0.83, 0.81), vec2(0.91, 0.06), -0.8);
+    d = smoothstep(0.0, AA, d);
+    mixedCol = returnDottedCol(vec2(p.x * 3.0, p.y * 3.0), vec3(0.48,0.17,0.69), vec3(0.44,0.08,0.33));
+    col = mix(col, mixedCol, 1.0 - d);
+
+    // while color
+    d = sdBox(p - vec2(0.83, 0.78), vec2(0.91, 0.03), -0.8);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, vec3(1.0), 1.0 - d);
+
+    // middle black bottom
+    d = sdBox(p - vec2(0.83, 0.81), vec2(0.91, 0.03), -0.8);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    // middle color 
+    d = sdBox(p - vec2(0.83, 0.81), vec2(0.91, 0.02), -0.8);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, vec3(0.35,0.84,0.98), 1.0 - d);
+}
+
+void bg(vec2 p, inout vec3 col, vec2 origP) {
+    col = mix(col, vec3(0.90,0.76,0.34), map(origP.y, 0.39, 0.74, 0.0, 1.0));
+
+    col = mix(col, vec3(0.76,0.78,0.53), map(origP.y, -0.09, -0.59, 0.0, 1.0));
 }
 
 // void mainImage( out vec4 fragColor, in vec2 fragCoord )
@@ -1458,6 +1845,10 @@ void main()
     // mirror coords
     p.x = abs(p.x);
     
+    bg(p, col, origP);
+    backBars(p, col, origP);
+    backClouds(p, col, origP);
+
     hat(p, col, origP);
     head(within(p, vec4(-0.75, 0.55, 0.75, -1.0)), col);
     eyeOil(p, col);
@@ -1467,6 +1858,9 @@ void main()
     nose(within(p, vec4(-0.1, -0.2, 0.1, -0.75)), col);   
 
     crown(p, col, origP);
+
+
+    thirdEyeRays(p, col, origP);
 
     thirdEye(within(p, vec4(-0.5, 0.5, 0.5, -0.29)), col, origP);  
 
