@@ -470,16 +470,16 @@ void eye(in vec2 p, inout vec3 col) {
 void head(in vec2 p, inout vec3 col) {
 
     // black outline
-    vec2 headSegB = vec2(0.5, 0.0);
-    vec2 headSegA = vec2(0.5, 0.5);
+    // vec2 vec2(0.5, 0.0) = vec2(0.5, 0.0);
+    // vec2 vec2(0.5, 0.5) = vec2(0.5, 0.5);
     // float r = 0.5;
-	float d = sdSegment(p, headSegA, headSegB) - 0.5;
+	float d = sdSegment(p, vec2(0.5, 0.5), vec2(0.5, 0.0)) - 0.5;
     d = smoothstep(0.0, AA,d);
     col = mix(col, blackOutlineColor, 1.0 - d);
 
     // head goo
-    d = sdSegment(p, headSegA, headSegB) - 0.5 * (1.0 - blackOutlineWidth);
-    //d *= sdSegment(p, headSegA, headSegB) - r * 0.5;
+    d = sdSegment(p, vec2(0.5, 0.5), vec2(0.5, 0.0)) - 0.5 * (1.0 - blackOutlineWidth);
+    //d *= sdSegment(p, vec2(0.5, 0.5), vec2(0.5, 0.0)) - r * 0.5;
     d = smoothstep(0.0, AA, d);
     col = mix(col, headGooColor, 1.0 - d);
 
@@ -487,7 +487,7 @@ void head(in vec2 p, inout vec3 col) {
     // head black
     // head bg outline color
 	// r = 0.44;
-    float hd = sdSegment(p, headSegA, headSegB) - 0.44;
+    float hd = sdSegment(p, vec2(0.5, 0.5), vec2(0.5, 0.0)) - 0.44;
     
     // bump
     // r = 0.03;
@@ -520,7 +520,7 @@ void head(in vec2 p, inout vec3 col) {
 
     // head bg outline color
 	// r = 0.43;
-    hd = sdSegment(p, headSegA, headSegB) - 0.43;
+    hd = sdSegment(p, vec2(0.5, 0.5), vec2(0.5, 0.0)) - 0.43;
     
     // bump
     // r = 0.02;
