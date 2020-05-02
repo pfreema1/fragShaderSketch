@@ -487,32 +487,32 @@ void head(in vec2 p, inout vec3 col) {
     // head black
     // head bg outline color
 	// r = 0.44;
-    float hd = sdSegment(p, vec2(0.5, 0.5), vec2(0.5, 0.0)) - 0.44;
+    float d1 = sdSegment(p, vec2(0.5, 0.5), vec2(0.5, 0.0)) - 0.44;
     
     // bump
     // r = 0.03;
-    float bumpd = sdSegment(p, vec2(0.85, 0.2), vec2(0.8, 0.2)) - 0.03;
-	float added = opSmoothUnion(hd, bumpd, 0.2);
+    float d2 = sdSegment(p, vec2(0.85, 0.2), vec2(0.8, 0.2)) - 0.03;
+	d = opSmoothUnion(d1, d2, 0.2);
 	
     
     // bump
     // r = 0.005;
-    float sbumpd = sdSegment(p, vec2(0.8,0.7), vec2(0.8,0.7)) - 0.005;
-    added = opSmoothUnion(added, sbumpd, 0.3);
+    d1 = sdSegment(p, vec2(0.8,0.7), vec2(0.8,0.7)) - 0.005;
+    d = opSmoothUnion(d, d1, 0.3);
     
 
     // subtract bump
     // r = 0.005;
-    float bumpd2 = sdSegment(p, vec2(0.72, 0.92), vec2(0.72, 0.92)) - 0.005;
-    added = opSmoothSubtraction(bumpd2, added, 0.15);
+    d1 = sdSegment(p, vec2(0.72, 0.92), vec2(0.72, 0.92)) - 0.005;
+    d = opSmoothSubtraction(d1, d, 0.15);
 
     // subtract bump
     // r = 0.005;
-    float bumpd3 = sdSegment(p, vec2(0.92, 0.62), vec2(0.92, 0.62)) - 0.005;
-    added = opSmoothSubtraction(bumpd3, added, 0.1);
+    d1 = sdSegment(p, vec2(0.92, 0.62), vec2(0.92, 0.62)) - 0.005;
+    d = opSmoothSubtraction(d1, d, 0.1);
 
-    added = smoothstep(0.0, AA, added);
-    col = mix(col, blackOutlineColor, 1.0 - added);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
     
     
     // ////////////////////////////////////////////////
@@ -520,32 +520,32 @@ void head(in vec2 p, inout vec3 col) {
 
     // head bg outline color
 	// r = 0.43;
-    hd = sdSegment(p, vec2(0.5, 0.5), vec2(0.5, 0.0)) - 0.43;
+    d = sdSegment(p, vec2(0.5, 0.5), vec2(0.5, 0.0)) - 0.43;
     
     // bump
     // r = 0.02;
-    bumpd = sdSegment(p, vec2(0.85, 0.2), vec2(0.8, 0.2)) - 0.02;
-    added = opSmoothUnion(hd, bumpd, 0.2);
+    d1 = sdSegment(p, vec2(0.85, 0.2), vec2(0.8, 0.2)) - 0.02;
+    d = opSmoothUnion(d, d1, 0.2);
 	
     
     // bump
     // r = 0.004;
-    sbumpd = sdSegment(p, vec2(0.8,0.7), vec2(0.8,0.7)) - 0.004;
-    added = opSmoothUnion(added, sbumpd, 0.3);
+    d1 = sdSegment(p, vec2(0.8,0.7), vec2(0.8,0.7)) - 0.004;
+    d = opSmoothUnion(d, d1, 0.3);
     
 
     // subtract bump
     // r = 0.004;
-    bumpd2 = sdSegment(p, vec2(0.72, 0.92), vec2(0.72, 0.92)) - 0.004;
-    added = opSmoothSubtraction(bumpd2, added, 0.15);
+    d1 = sdSegment(p, vec2(0.72, 0.92), vec2(0.72, 0.92)) - 0.004;
+    d = opSmoothSubtraction(d1, d, 0.15);
 
     // subtract bump
     // r = 0.004;
-    bumpd3 = sdSegment(p, vec2(0.92, 0.62), vec2(0.92, 0.62)) - 0.004;
-    added = opSmoothSubtraction(bumpd3, added, 0.1);
+    d1 = sdSegment(p, vec2(0.92, 0.62), vec2(0.92, 0.62)) - 0.004;
+    d = opSmoothSubtraction(d1, d, 0.1);
 
-    added = smoothstep(0.0, AA, added);
-    col = mix(col, headColor, 1.0 - added);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, headColor, 1.0 - d);
 
     // addGrid(p, col);
 }
