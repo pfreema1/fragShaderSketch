@@ -381,20 +381,20 @@ float sdBezier( in vec2 pos, in vec2 A, in vec2 B, in vec2 C )
 
 void eye(in vec2 p, inout vec3 col) { 
     // eye lash black bottom
-    float r = 0.06;
-  	float d = sdSegment(p, vec2(0.5, 0.5), vec2(0.5, 1.04)) - r;
+    // float r = 0.06;
+  	float d = sdSegment(p, vec2(0.5, 0.5), vec2(0.5, 1.04)) - 0.06;
     d = smoothstep(0.0, AA, d);
     col = mix(col, blackOutlineColor, 1.0 - d);
 
     // eye lash color
-    r = 0.045;
-  	d = sdSegment(p, vec2(0.5, 0.5), vec2(0.5, 1.04)) - r;
+    // r = 0.045;
+  	d = sdSegment(p, vec2(0.5, 0.5), vec2(0.5, 1.04)) - 0.045;
     d = smoothstep(0.0, AA, d);
     col = mix(col, vec3(0.90,0.76,0.34), 1.0 - d);
 
     // bottom outline
-    r = 0.4;
-  	d = sdSegment(p, vec2(0.5, 0.5), vec2(0.5, 0.6)) - r;
+    // r = 0.4;
+  	d = sdSegment(p, vec2(0.5, 0.5), vec2(0.5, 0.6)) - 0.4;
     d = smoothstep(0.0, AA, d);
     col = mix(col, blackOutlineColor, 1.0 - d);
 
@@ -410,13 +410,13 @@ void eye(in vec2 p, inout vec3 col) {
     col = mix(col, vec3(0.0), lines * (1.0 - d));
 
 
-    r = 0.4;
-    d = sdSegment(p, vec2(0.5, 0.58), vec2(0.5, 0.62)) - r;
+    // r = 0.4;
+    d = sdSegment(p, vec2(0.5, 0.58), vec2(0.5, 0.62)) - 0.4;
     d = smoothstep(0.0, AA, d);
     col = mix(col, blackOutlineColor, 1.0 - d);
 
-    r = 0.39;
-    d = sdSegment(p, vec2(0.5, 0.59), vec2(0.5, 0.61)) - r;
+    // r = 0.39;
+    d = sdSegment(p, vec2(0.5, 0.59), vec2(0.5, 0.61)) - 0.39;
     d = smoothstep(0.0, AA, d);
     mixedCol = mix(vec3(0.55,0.23,0.65), vec3(0.92,0.54,0.37), smoothstep(0.18, 0.92, p.y));
     col = mix(col, mixedCol, 1.0 - d); 
@@ -424,8 +424,8 @@ void eye(in vec2 p, inout vec3 col) {
     ///////////////////////////////////////////////////////////
     // top gear
     // black bottom of top gear
-    r = 0.3;
-    d = sdSegment(p, vec2(0.5, 0.59), vec2(0.5, 0.66)) - r;
+    // r = 0.3;
+    d = sdSegment(p, vec2(0.5, 0.59), vec2(0.5, 0.66)) - 0.3;
     d = smoothstep(0.0, AA, d);
     col = mix(col, blackOutlineColor, 1.0 - d); 
 
@@ -440,26 +440,26 @@ void eye(in vec2 p, inout vec3 col) {
     col = mix(col, vec3(0.0), lines * (1.0 - d));
 
     //black bottom of top colored gear
-    r = 0.3;
-    d = sdSegment(p, vec2(0.5, 0.67), vec2(0.5, 0.67)) - r;
+    // r = 0.3;
+    d = sdSegment(p, vec2(0.5, 0.67), vec2(0.5, 0.67)) - 0.3;
     d = smoothstep(0.0, AA, d);
     col = mix(col, blackOutlineColor, 1.0 - d); 
 
-    r = 0.285;
-    d = sdSegment(p, vec2(0.5, 0.67), vec2(0.5, 0.67)) - r;
+    // r = 0.285;
+    d = sdSegment(p, vec2(0.5, 0.67), vec2(0.5, 0.67)) - 0.285;
     d = smoothstep(0.0, AA, d);
     mixedCol = mix(vec3(0.99,0.96,0.86), vec3(0.92,0.81,0.48), p.x);
     col = mix(col, mixedCol, 1.0 - d); 
 
     // pupil
-    r = 0.2;
-    d = sdSegment(p, vec2(0.5, 0.67), vec2(0.5, 0.67)) - r;
+    // r = 0.2;
+    d = sdSegment(p, vec2(0.5, 0.67), vec2(0.5, 0.67)) - 0.2;
     d = smoothstep(0.0, AA, d);
     col = mix(col, blackOutlineColor, 1.0 - d); 
 
     // iris
-    r = 0.05;
-    d = sdSegment(p, vec2(0.5, 0.67), vec2(0.5, 0.67)) - r;
+    // r = 0.05;
+    d = sdSegment(p, vec2(0.5, 0.67), vec2(0.5, 0.67)) - 0.05;
     d = smoothstep(0.0, AA, d);
     mixedCol = mix(vec3(0.75,0.76,0.55), vec3(0.48,0.82,0.86), p.x);
     col = mix(col, mixedCol, 1.0 - d); 
