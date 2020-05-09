@@ -13,6 +13,9 @@ export default class RenderTri {
     this.pane = pane;
     this.PARAMS = PARAMS;
 
+    this.addGUI();
+
+
     const resolution = new THREE.Vector2();
     this.renderer.getDrawingBufferSize(resolution);
 
@@ -64,6 +67,15 @@ export default class RenderTri {
         },
         mod9: {
           value: 1.0
+        },
+        camX: {
+          value: this.PARAMS.camera.x
+        },
+        camY: {
+          value: this.PARAMS.camera.y
+        },
+        camZ: {
+          value: this.PARAMS.camera.z
         }
       }
     });
@@ -76,7 +88,7 @@ export default class RenderTri {
 
     this.scene.add(renderTri);
 
-    this.addGUI();
+
   }
 
   addGUI() {
@@ -89,6 +101,13 @@ export default class RenderTri {
     this.PARAMS.mod7 = 1.0;
     this.PARAMS.mod8 = 1.0;
     this.PARAMS.mod9 = 1.0;
+    this.PARAMS.camera = {
+      x: 0.0,
+      y: 2.0,
+      z: 8.0
+    };
+
+
 
     this.pane.addInput(this.PARAMS, 'mod1', {
       min: -1.0,
@@ -151,6 +170,31 @@ export default class RenderTri {
       max: 1.0
     }).on('change', value => {
       this.triMaterial.uniforms.mod9.value = value;
+    });
+
+    this.cf = this.pane.addFolder({
+      title: 'camera'
+    });
+
+    this.cf.addInput(this.PARAMS.camera, 'x', {
+      min: -10.0,
+      max: 10.0
+    }).on('change', value => {
+      this.triMaterial.uniforms.camX.value = value;
+    });
+
+    this.cf.addInput(this.PARAMS.camera, 'y', {
+      min: -10.0,
+      max: 10.0
+    }).on('change', value => {
+      this.triMaterial.uniforms.camY.value = value;
+    });
+
+    this.cf.addInput(this.PARAMS.camera, 'z', {
+      min: -10.0,
+      max: 10.0
+    }).on('change', value => {
+      this.triMaterial.uniforms.camZ.value = value;
     });
   }
 
