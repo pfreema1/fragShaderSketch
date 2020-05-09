@@ -88,7 +88,7 @@ export default class WebGLView {
     this.pane = new Tweakpane();
 
     console.log(this.pane);
-    this.pane.containerElem_.style.display = 'none';
+    // this.pane.containerElem_.style.display = 'none';
 
     // this.pane
     //   .addInput(this.PARAMS, 'rotSpeed', {
