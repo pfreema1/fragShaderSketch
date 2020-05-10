@@ -23,7 +23,20 @@ uniform float camZ;
 #define TAU 2.0 * PI
 #define gridThickness 0.05
 
+// setRot - https://www.shadertoy.com/view/MsXXWH
+mat3 setRot( const in vec3 r )
+{
+    float a = sin(r.x); float b = cos(r.x); 
+    float c = sin(r.y); float d = cos(r.y); 
+    float e = sin(r.z); float f = cos(r.z); 
 
+    float ac = a*c;
+    float bc = b*c;
+
+    return mat3( d*f,      d*e,       -c,
+                 ac*f-b*e, ac*e+b*f, a*d,
+                 bc*f+a*e, bc*e-a*f, b*d );
+}
 
 float remap(float value, float min1, float max1, float min2, float max2) {
   return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
@@ -103,12 +116,12 @@ vec2 sdJellyFish( in vec3 p ) {
     float smoothVal = 0.0;
     vec3 modP = vec3(0.0);
 
-
+    p = setRot(vec3(TAU, 0.8 * TAU, TAU)) * p;
     // body id:2.0
     // small (subtractor)
-    d1 = sdSphere(p - vec3(0.0,2.0,0.0) - vec3(0.0, 0.0, 0.13 * 3.0), 0.55 );
+    d1 = sdSphere(p - vec3(0.0, 2.0, 0.39), 0.75 );
     // big (visible)
-    d2 = sdSphere(p - vec3(0.0,2.0,0.0) - vec3(0.0, 0.0, 0.0), 1.0 ); 
+    d2 = sdSphere(p - vec3(0.0, 2.0, 0.0), 1.2 ); 
     smoothVal = remap(sin(time), -1.0, 1.0, 1.0, 0.39);
     dt = opSmoothSubtraction(d1,d2, smoothVal);
     d = min(d, dt);
@@ -117,13 +130,15 @@ vec2 sdJellyFish( in vec3 p ) {
 
     // tube id: 3.0
     modP = vec3(p);
-    float m = sin(time + modP.y);
-    modP.x += m;
-    d1 = sdVerticalCapsule(modP - vec3(-0.22, 1.0, 1.0), 5.0, 0.07);
+    modP = setRot(vec3(0.76 * TAU, 1.0 * TAU, 1.0 * TAU)) * modP;
+    float m = sin(time + modP.y) * (0.2 * modP.y);
+    modP.z += m;
+    d1 = sdVerticalCapsule(modP - vec3(0.0, 0.0, -1.5), 5.0, 0.07);
+    // d1 = opSmoothUnion(d, d1, mod1);
     if(d1 < d) {
         res = vec2(d1, 3.0);
     }
-    d = min (d, d1);
+    d = min(d, d1);
 
     return res; 
 }
