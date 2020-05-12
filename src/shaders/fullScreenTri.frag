@@ -419,10 +419,41 @@ void cranium(vec2 p, inout vec3 col, vec2 origP) {
     // temple indents
     d1 = sdCircle(p - vec2(0.7, -0.17), 0.15);
     d = opSmoothSubtraction(d1, d, 0.02);
-
-
     d = smoothstep(0.0, AA, d);
     col = mix(col, blackOutlineColor, 1.0 - d);
+
+    ////////////////
+    // color
+    ///////////////
+    // cranium circle
+    d = sdCircle(origP - vec2(0.0, 0.1), 0.57);
+    // mandible box
+    d1 = sdBox(origP - vec2(0.0, -0.37), vec2(0.3, 0.3), 0.11);
+    d = opSmoothUnion(d, d1, 0.22);
+    // cheek indents
+    d1 = sdCircle(p - vec2(0.74, -0.5), 0.41);
+    d = opSmoothSubtraction(d1, d, 0.15);
+    // eye socket protrusions
+    d1 = sdRoundBox(p - vec2(0.34, -0.22), vec2(0.20, 0.18), vec4(0.07, 0.11, 0.22, 0.22));
+    d = opSmoothUnion(d, d1, 0.04);
+    // cheek indents
+    d1 = sdCircle(p - vec2(0.41, -0.46), 0.06);
+    d = opSmoothSubtraction(d1, d, 0.04);
+    // temple indents
+    d1 = sdCircle(p - vec2(0.7, -0.17), 0.17);
+    d = opSmoothSubtraction(d1, d, 0.02);
+    d = smoothstep(0.0, AA, d);
+    // setup color
+    if(origP.x < -0.2) {
+        mixedCol = vec3(0.39,0.59,0.65);
+    } else if(origP.x < 0.0) {
+        mixedCol = vec3(0.90,0.92,0.76);
+    } else {
+        mixedCol = vec3(0.82,0.87,0.85);
+    }
+    col = mix(col, mixedCol, 1.0 - d);
+
+
 }
 
 // void mainImage( out vec4 fragColor, in vec2 fragCoord )
