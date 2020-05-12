@@ -12,11 +12,83 @@ uniform float mod8;
 uniform float mod9;
 
 /*
-    -design from: https://dribbble.com/shots/10707556-Another-Dimension
     -sdf functions from iq   
     
 
 */
+
+//
+// GLSL textureless classic 2D noise "cnoise",
+// with an RSL-style periodic variant "pnoise".
+// Author:  Stefan Gustavson (stefan.gustavson@liu.se)
+// Version: 2011-08-22
+//
+// Many thanks to Ian McEwan of Ashima Arts for the
+// ideas for permutation and gradient selection.
+//
+// Copyright (c) 2011 Stefan Gustavson. All rights reserved.
+// Distributed under the MIT license. See LICENSE file.
+// https://github.com/ashima/webgl-noise
+//
+
+vec4 mod289(vec4 x)
+{
+  return x - floor(x * (1.0 / 289.0)) * 289.0;
+}
+
+vec4 permute(vec4 x)
+{
+  return mod289(((x*34.0)+1.0)*x);
+}
+
+vec4 taylorInvSqrt(vec4 r)
+{
+  return 1.79284291400159 - 0.85373472095314 * r;
+}
+
+vec2 fade(vec2 t) {
+  return t*t*t*(t*(t*6.0-15.0)+10.0);
+}
+
+// Classic Perlin noise
+float cnoise(vec2 P)
+{
+  vec4 Pi = floor(P.xyxy) + vec4(0.0, 0.0, 1.0, 1.0);
+  vec4 Pf = fract(P.xyxy) - vec4(0.0, 0.0, 1.0, 1.0);
+  Pi = mod289(Pi); // To avoid truncation effects in permutation
+  vec4 ix = Pi.xzxz;
+  vec4 iy = Pi.yyww;
+  vec4 fx = Pf.xzxz;
+  vec4 fy = Pf.yyww;
+
+  vec4 i = permute(permute(ix) + iy);
+
+  vec4 gx = fract(i * (1.0 / 41.0)) * 2.0 - 1.0 ;
+  vec4 gy = abs(gx) - 0.5 ;
+  vec4 tx = floor(gx + 0.5);
+  gx = gx - tx;
+
+  vec2 g00 = vec2(gx.x,gy.x);
+  vec2 g10 = vec2(gx.y,gy.y);
+  vec2 g01 = vec2(gx.z,gy.z);
+  vec2 g11 = vec2(gx.w,gy.w);
+
+  vec4 norm = taylorInvSqrt(vec4(dot(g00, g00), dot(g01, g01), dot(g10, g10), dot(g11, g11)));
+  g00 *= norm.x;
+  g01 *= norm.y;
+  g10 *= norm.z;
+  g11 *= norm.w;
+
+  float n00 = dot(g00, vec2(fx.x, fy.x));
+  float n10 = dot(g10, vec2(fx.y, fy.y));
+  float n01 = dot(g01, vec2(fx.z, fy.z));
+  float n11 = dot(g11, vec2(fx.w, fy.w));
+
+  vec2 fade_xy = fade(Pf.xy);
+  vec2 n_x = mix(vec2(n00, n01), vec2(n10, n11), fade_xy.x);
+  float n_xy = mix(n_x.x, n_x.y, fade_xy.y);
+  return 2.3 * n_xy;
+}
 
 // #define AA 0.005
 #define PI 3.14159
@@ -277,7 +349,16 @@ float sdSegment( in vec2 p, in vec2 a, in vec2 b )
     return length( pa - ba*h );
 }
 
-
+float sdUnevenCapsule( vec2 p, float r1, float r2, float h )
+{
+    p.x = abs(p.x);
+    float b = (r1-r2)/h;
+    float a = sqrt(1.0-b*b);
+    float k = dot(p,vec2(-b,a));
+    if( k < 0.0 ) return length(p) - r1;
+    if( k > a*h ) return length(p-vec2(0.0,h)) - r2;
+    return dot(p, vec2(a,b) ) - r1;
+}
 
 
 
@@ -446,13 +527,55 @@ void cranium(vec2 p, inout vec3 col, vec2 origP) {
     // setup color
     if(origP.x < -0.2) {
         mixedCol = vec3(0.39,0.59,0.65);
-    } else if(origP.x < 0.0) {
+    } else if(origP.x < 0.2) {
         mixedCol = vec3(0.90,0.92,0.76);
     } else {
         mixedCol = vec3(0.82,0.87,0.85);
     }
     col = mix(col, mixedCol, 1.0 - d);
 
+    // eye socket black bottom
+    d = sdCircle(p - vec2(0.26, -0.11), 0.2);
+    // eye socket subtraction
+    d1 = sdCircle(p - vec2(0.46, 0.26), 0.28);
+    d = opSmoothSubtraction(d1, d, 0.10);
+    d1 = sdCircle(p - vec2(0.26, -0.46), 0.17);
+    d = opSmoothSubtraction(d1, d, 0.02);
+    modP = vec2(p.x, p.y);
+    modP = rotate2d(0.61 * TAU) * modP;
+    d1 = sdBox(modP - vec2(0.28, 0.3), vec2(0.24, 0.26), 0.04);
+    d = opSmoothSubtraction(d1, d, 0.02);
+    modP = vec2(p.x, p.y);
+    modP = rotate2d(0.5 * TAU) * modP;
+    d1 = sdBox(modP - vec2(0.04, 0.8), vec2(0.09, 1.0), 0.26);
+    d = opSmoothSubtraction(d1, d, 0.15);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+
+
+    // nose socket black
+    d = sdSegment(p, vec2(0.0, -0.26), vec2(0.05, -0.39)) - 0.05;
+    d1 = sdSegment(p, vec2(-0.02, -0.37), vec2(0.0, -0.7)) - 0.02;
+    d = opSmoothSubtraction(d1, d, 0.13);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+
+
+
+    // teeth
+    modP = vec2(origP.x, origP.y);
+    float n = cnoise(modP * 10.0) * mod1;
+    modP.x += n;
+    modP.y += n;
+    d = sdSegment(modP, vec2(-0.09, -0.65), vec2(-0.09, -0.74)) - 0.04;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    // d = sdSegment(modP, vec2(-0.09, -0.65), vec2(-0.09, -0.74)) - 0.03;
+    // d = smoothstep(0.0, AA, d);
+    // col = mix(col, vec3(0.96,0.89,0.74), 1.0 - d);
 
 }
 
