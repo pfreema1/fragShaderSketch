@@ -480,22 +480,33 @@ void cranium(vec2 p, inout vec3 col, vec2 origP) {
     float modTime = 0.0;
     float loopTime = 0.0;
     float n = 0.0;
+
+    // testing noise - looks great!
+    // modP = vec2(origP.x, origP.y) * 0.6;
+    // p = vec2(p.x, p.y);
+    // n = cnoise(modP * 10.0) * 0.02;
+    // modP.x += n;
+    // modP.y -= n;
+    // p.x += n;
+    // p.y -= n;
     
     /////////////////
     // blackbottom
     ////////////////
     // cranium circle
     d = sdCircle(origP - vec2(0.0, 0.1), 0.59);
+    d1 = sdBox(origP - vec2(0.07, 0.96), vec2(0.41, 0.13), -0.07);
+    d = opSmoothSubtraction(d1, d, 0.26);
     // mandible box
     d1 = sdBox(origP - vec2(0.0, -0.37), vec2(0.33, 0.33), 0.11);
     d = opSmoothUnion(d, d1, 0.22);
-    // cheek indents
+    // zygomatic indents
     d1 = sdCircle(p - vec2(0.74, -0.5), 0.39);
     d = opSmoothSubtraction(d1, d, 0.15);
     // eye socket protrusions
     d1 = sdRoundBox(p - vec2(0.34, -0.22), vec2(0.22, 0.2), vec4(0.07, 0.11, 0.22, 0.22));
     d = opSmoothUnion(d, d1, 0.04);
-    // cheek indents
+    // zygomatic indents
     d1 = sdCircle(p - vec2(0.41, -0.46), 0.04);
     d = opSmoothSubtraction(d1, d, 0.04);
     // temple indents
@@ -509,31 +520,25 @@ void cranium(vec2 p, inout vec3 col, vec2 origP) {
     ///////////////
     // cranium circle
     d = sdCircle(origP - vec2(0.0, 0.1), 0.57);
+    d1 = sdBox(origP - vec2(0.07, 0.96), vec2(0.41, 0.13), -0.07);
+    d = opSmoothSubtraction(d1, d, 0.26);
     // mandible box
     d1 = sdBox(origP - vec2(0.0, -0.37), vec2(0.3, 0.3), 0.11);
     d = opSmoothUnion(d, d1, 0.22);
-    // cheek indents
+    // zygomatic indents
     d1 = sdCircle(p - vec2(0.74, -0.5), 0.41);
     d = opSmoothSubtraction(d1, d, 0.15);
     // eye socket protrusions
     d1 = sdRoundBox(p - vec2(0.34, -0.22), vec2(0.20, 0.18), vec4(0.07, 0.11, 0.22, 0.22));
     d = opSmoothUnion(d, d1, 0.04);
-    // cheek indents
+    // zygomatic indents
     d1 = sdCircle(p - vec2(0.41, -0.46), 0.06);
     d = opSmoothSubtraction(d1, d, 0.04);
     // temple indents
     d1 = sdCircle(p - vec2(0.7, -0.17), 0.17);
     d = opSmoothSubtraction(d1, d, 0.02);
     d = smoothstep(0.0, AA, d);
-    // setup color
-    if(origP.x < -0.2) {
-        mixedCol = vec3(0.39,0.59,0.65);
-    } else if(origP.x < 0.2) {
-        mixedCol = vec3(0.90,0.92,0.76);
-    } else {
-        mixedCol = vec3(0.82,0.87,0.85);
-    }
-    col = mix(col, mixedCol, 1.0 - d);
+    col = mix(col, vec3(0.82,0.87,0.85), 1.0 - d);
 
     // eye socket black bottom
     d = sdCircle(p - vec2(0.26, -0.11), 0.2);
@@ -553,12 +558,36 @@ void cranium(vec2 p, inout vec3 col, vec2 origP) {
     d = smoothstep(0.0, AA, d);
     col = mix(col, blackOutlineColor, 1.0 - d);
 
+    // eye socket color
+    d = sdCircle(p - vec2(0.26, -0.11), 0.18);
+    // eye socket subtraction
+    d1 = sdCircle(p - vec2(0.46, 0.26), 0.28);
+    d = opSmoothSubtraction(d1, d, 0.10);
+    d1 = sdCircle(p - vec2(0.26, -0.46), 0.17);
+    d = opSmoothSubtraction(d1, d, 0.02);
+    modP = vec2(p.x, p.y);
+    modP = rotate2d(0.61 * TAU) * modP;
+    d1 = sdBox(modP - vec2(0.28, 0.3), vec2(0.24, 0.26), 0.04);
+    d = opSmoothSubtraction(d1, d, 0.04);
+    modP = vec2(p.x, p.y);
+    modP = rotate2d(0.5 * TAU) * modP;
+    d1 = sdBox(modP - vec2(0.04, 0.8), vec2(0.09, 1.0), 0.26);
+    d = opSmoothSubtraction(d1, d, 0.15);
+    d1 = sdCircle(origP - vec2(0.13, -0.22), 0.07);
+    d = opSmoothSubtraction(d1, d, 0.04);
+    d1 = sdCircle(vec2(origP.x * -1.0, origP.y) - vec2(0.105, -0.22), 0.07);
+    d = opSmoothSubtraction(d1, d, 0.04);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, vec3(0.85,0.65,0.68), 1.0 - d);
+
 
 
     // nose socket black
     d = sdSegment(p, vec2(0.0, -0.26), vec2(0.05, -0.39)) - 0.05;
-    d1 = sdSegment(p, vec2(-0.02, -0.37), vec2(0.0, -0.7)) - 0.02;
+    d1 = sdSegment(p, vec2(-0.02, -0.37 - 0.11), vec2(0.0, -0.7 - 0.11)) - 0.02;
     d = opSmoothSubtraction(d1, d, 0.13);
+    // d1 = sdCircle(p - vec2(mod1, mod2), mod3);
+    // d = opSmoothUnion(d1, d, mod4);
     d = smoothstep(0.0, AA, d);
     col = mix(col, blackOutlineColor, 1.0 - d);
 
@@ -706,7 +735,7 @@ void cranium(vec2 p, inout vec3 col, vec2 origP) {
     modP.x += n;
     modP.y -= n;
     modP *= 1.7;
-    d = sdSegment(modP, vec2(-0.09-0.28, -1.2 + 0.26), vec2(-0.09-0.28, -1.14 + 0.26)) - 0.04;
+    d = sdSegment(modP, vec2(-0.09-0.28, -1.2 + 0.29), vec2(-0.09-0.28, -1.14 + 0.29)) - 0.04;
     d = smoothstep(0.0, AA, d);
     col = mix(col, blackOutlineColor, 1.0 - d);
     modP = vec2(origP.x, origP.y) * 0.8;
@@ -714,7 +743,7 @@ void cranium(vec2 p, inout vec3 col, vec2 origP) {
     modP.x += n;
     modP.y -= n;
     modP *= 1.7;
-    d = sdSegment(modP, vec2(-0.09-0.28, -1.2 + 0.26), vec2(-0.09-0.28, -1.14 + 0.26)) - 0.03;
+    d = sdSegment(modP, vec2(-0.09-0.28, -1.2 + 0.29), vec2(-0.09-0.28, -1.14 + 0.29)) - 0.03;
     d = smoothstep(0.0, AA, d);
     col = mix(col, vec3(0.99,0.94,0.81), 1.0 - d);
     //
@@ -777,20 +806,138 @@ void cranium(vec2 p, inout vec3 col, vec2 origP) {
 
 }
 
+void darkLines(vec2 p, inout vec3 col, vec2 origP) {
+    float d = 0.0;
+    float d1 = 0.0;
+    float d2 = 0.0;
+    float d3 = 0.0;
+    float r = 0.0;
+    vec2 modP = vec2(0.0);
+    vec3 mixedCol = vec3(0.0);
+    float modTime = 0.0;
+    float loopTime = 0.0;
+    float n = 0.0;
+    float m = 0.0;
+    float mask = 0.0;
+
+    // testing noise - looks great!
+    // modP = vec2(origP.x, origP.y) * 0.6;
+    // p = vec2(p.x, p.y);
+    // n = cnoise(modP * 10.0) * 0.02;
+    // modP.x += n;
+    // modP.y -= n;
+    // p.x += n;
+    // p.y -= n;
+
+    // zygomatic (bottom)
+    modP = vec2(p.x, p.y);
+    m = sin(p.x + 4.4);
+    modP.y += m;
+    modP.y -= -0.262 * 4.0;
+    modP.x += 0.05;
+    modP = rotate2d(0.02 * TAU) * modP;
+    d = sdSegment(modP, vec2(0.24, -0.41), vec2(0.35, -0.41)) - 0.01;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    // zygomatic (side)
+    modP = within(p - vec2(0.46, -0.04), vec4(0.29, 0.17, 0.74, -0.26));
+    modP = rotate2d(PI * 0.5) * modP;
+    m = sin((modP.x + 5.0) * 6.0) * 0.06;
+    m += 0.5;
+    d = length(modP - vec2(modP.x, m));
+    mask = step(0.0, modP.x) * step(modP.x, 0.65);
+    d = smoothstep(0.018, 0.028, d);
+    col = mix(col, blackOutlineColor, (1.0 - d) * mask);
+
+    // frontal (corner)
+    modP = within(p - vec2(0.57, 0.09), vec4(0.13, 0.22, 0.39, -0.04));
+    modP = rotate2d(0.39 * TAU) * modP;
+    m = sin(modP.x * 6.0) * 0.08;
+    m += 0.6;
+    d = length(modP - vec2(modP.x, m));
+    mask = step(0.55, modP.x) * step(modP.x, 0.75);
+    d = smoothstep(0.005, 0.02, d);
+    col = mix(col, blackOutlineColor, (1.0 - d) * mask);
+    // addGrid(modP, col);
+    // frontal right
+    modP = within(origP, vec4(0.13, 0.22, 0.39, -0.04));
+    modP = rotate2d(-0.01 * TAU) * modP;
+    m = sin(modP.x * 6.0) * 0.03;
+    m += 0.6;
+    d = length(modP - vec2(modP.x, m));
+    mask = step(0.25, modP.x) * step(modP.x, 0.75);
+    d = smoothstep(0.005, 0.02, d);
+    col = mix(col, blackOutlineColor, (1.0 - d) * mask);
+    // front left
+    modP = within(vec2(origP.x * -1.0, origP.y), vec4(0.13, 0.22, 0.48, -0.04));
+    modP = rotate2d(0.000 * TAU) * modP;
+    m = sin(modP.x * 6.0) * 0.03;
+    m += 0.6;
+    d = length(modP - vec2(modP.x, m));
+    mask = step(0.25, modP.x) * step(modP.x, 0.75);
+    d = smoothstep(0.005, 0.02, d);
+    col = mix(col, blackOutlineColor, (1.0 - d) * mask);
+
+    // upper maxilla
+    modP = within(p - vec2(0.0, -0.22), vec4(0.13, 0.22, 0.39, -0.04));
+    modP = rotate2d(-0.275 * TAU) * modP;
+    m = sin(modP.x * 6.0) * 0.08;
+    m += 0.6;
+    d = length(modP - vec2(modP.x, m));
+    mask = step(0.55, modP.x) * step(modP.x, 0.85);
+    d = smoothstep(0.005, 0.02, d);
+    col = mix(col, blackOutlineColor, (1.0 - d) * mask);
+    // upper maxilla
+    modP = within(p - vec2(0.035, -0.22), vec4(0.13, 0.22, 0.39, -0.04));
+    modP = rotate2d(-0.275 * TAU) * modP;
+    m = sin(modP.x * 6.0) * 0.08;
+    m += 0.6;
+    d = length(modP - vec2(modP.x, m));
+    mask = step(0.55, modP.x) * step(modP.x, 0.65);
+    d = smoothstep(0.005, 0.02, d);
+    col = mix(col, blackOutlineColor, (1.0 - d) * mask);
+    // maxilla
+    modP = within(origP - vec2(-0.4, -0.25), vec4(0.13, 0.22, 0.39, -0.04));
+    modP = rotate2d(0.76 * TAU) * modP;
+    m = sin(modP.x * 6.0) * 0.08;
+    m += 0.6;
+    d = length(modP - vec2(modP.x, m));
+    mask = step(0.55, modP.x) * step(modP.x, 0.85);
+    d = smoothstep(0.005, 0.02, d);
+    col = mix(col, blackOutlineColor, (1.0 - d) * mask);
+    // addGrid(modP, col);
+
+    // eye socket
+    // d = sdBezier(p, vec2(0.1, -0.11), vec2(0.11, 0.03), vec2(0.26, 0.0)) - 0.0;
+    // d = smoothstep(0.0, AA, d);
+    // col = mix(col, blackOutlineColor, 1.0 - d);
+    // d = sdBezier(p, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - mod7;
+    // d = smoothstep(0.0, AA, d);
+    // col = mix(col, blackOutlineColor, 1.0 - d);
+}
+
 // void mainImage( out vec4 fragColor, in vec2 fragCoord )
 void main()
 {
     // vec2 p = (2.0*fragCoord-iResolution.xy)/iResolution.y;
     vec2 p = (2.0 * gl_FragCoord.xy - iResolution.xy) / iResolution.y;
     
+    
+    // perturb coords
+    // float m = sin(iTime + (p.y * 4.0)) * (0.1 * p.y);
+    // // m *= p.y * 4.0;
+    // p.x += m;
 
     vec2 origP = vec2(p.x, p.y);
+
+
     // mirror coords
     p.x = abs(p.x);
 
     
     bg(p, col, origP);
     cranium(p, col, origP);
+    darkLines(p, col, origP);
 
 	// fragColor = vec4(col,1.0);
     gl_FragColor = vec4(col, 1.0);
