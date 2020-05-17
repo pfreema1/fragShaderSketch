@@ -1023,10 +1023,19 @@ void main()
     vec2 p = (2.0 * gl_FragCoord.xy - iResolution.xy) / iResolution.y;
     
     
-    // perturb coords
-    // float m = sin(iTime + (p.y * 4.0)) * (0.1 * p.y);
-    // // m *= p.y * 4.0;
-    // p.x += m;
+    // perturb coords - highs
+    float highsMod = 0.02;
+    float m = sin(iTime + (p.y * 20.0)) * highsMod;
+    m *= smoothstep(-0.35, 0.0, p.y) - (smoothstep(0.0, 0.2, p.y));
+    // m *= p.y * 4.0;
+    p.x += m;
+
+    // perturb coords - lows
+    float lowsMod = 0.002;
+    float noiseScale = 10.0;
+    float n = cnoise(vec2(p.x, p.y + (iTime * 0.5)) * noiseScale) * lowsMod;
+    p.x += n;
+    p.y -= n;
 
     vec2 origP = vec2(p.x, p.y);
 
