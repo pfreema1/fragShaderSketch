@@ -17,6 +17,20 @@ uniform float mod9;
 
 */
 
+// https://www.shadertoy.com/view/MsjXRt
+vec4 HueShift (in vec3 Color, in float Shift)
+{
+    vec3 P = vec3(0.55735)*dot(vec3(0.55735),Color);
+    
+    vec3 U = Color-P;
+    
+    vec3 V = cross(vec3(0.55735),U);    
+
+    Color = U*cos(Shift*6.2832) + V*sin(Shift*6.2832) + P;
+    
+    return vec4(Color,1.0);
+}
+
 //
 // GLSL textureless classic 2D noise "cnoise",
 // with an RSL-style periodic variant "pnoise".
@@ -88,6 +102,11 @@ float cnoise(vec2 P)
   vec2 n_x = mix(vec2(n00, n01), vec2(n10, n11), fade_xy.x);
   float n_xy = mix(n_x.x, n_x.y, fade_xy.y);
   return 2.3 * n_xy;
+}
+
+// https://www.shadertoy.com/view/4dsSzr
+vec3 ansiGradient(float t) {
+	return mod(floor(t * vec3(8.0, 4.0, 2.0)), 2.0);
 }
 
 // #define AA 0.005
@@ -480,6 +499,7 @@ void cranium(vec2 p, inout vec3 col, vec2 origP) {
     float modTime = 0.0;
     float loopTime = 0.0;
     float n = 0.0;
+    float m = 0.0;
 
     // testing noise - looks great!
     // modP = vec2(origP.x, origP.y) * 0.6;
@@ -489,6 +509,83 @@ void cranium(vec2 p, inout vec3 col, vec2 origP) {
     // modP.y -= n;
     // p.x += n;
     // p.y -= n;
+
+    
+    //////////////////
+    // lower layers LEWWWWWWWP
+    //////////////////
+    for(int i = 0; i < 15; i++) {
+        float loopTime = 2.0;
+        float iVal = float(i);
+        float totalI = 15.0;
+        float maxScale = 3.0 + (sin(iTime + iVal) * 0.05);
+        float minScale = 0.8 - (sin(iTime + iVal) * 0.05);
+        //////////////////
+        // outline
+        //////////////////
+        // cranium circle
+        modP = vec2(origP.x, origP.y);
+        modP = rotate2d(sin(iTime + iVal) * 0.05) * modP;
+        float borderSize = (0.05 * (iVal / totalI)) * sin(iTime * 2.0 + iVal) + 0.05;
+        modP /= map(iVal, 0.0, totalI, maxScale, minScale) + borderSize;
+        d = sdCircle(modP - vec2(0.0, 0.1), 0.59);
+        d1 = sdBox(modP - vec2(0.07, 0.96), vec2(0.41, 0.13), -0.07);
+        d = opSmoothSubtraction(d1, d, 0.26);
+        // mandible box
+        d1 = sdBox(modP - vec2(0.0, -0.37), vec2(0.33, 0.33), 0.11);
+        d = opSmoothUnion(d, d1, 0.22);
+        // zygomatic indents
+        modP = vec2(p.x, p.y);
+        modP /= map(iVal, 0.0, totalI, maxScale, minScale) + borderSize;
+        d1 = sdCircle(modP - vec2(0.74, -0.5), 0.39);
+        d = opSmoothSubtraction(d1, d, 0.15);
+        // eye socket protrusions
+        d1 = sdRoundBox(modP - vec2(0.34, -0.22), vec2(0.22, 0.2), vec4(0.07, 0.11, 0.22, 0.22));
+        d = opSmoothUnion(d, d1, 0.04);
+        // zygomatic indents
+        d1 = sdCircle(modP - vec2(0.41, -0.46), 0.04);
+        d = opSmoothSubtraction(d1, d, 0.04);
+        // temple indents
+        d1 = sdCircle(modP - vec2(0.7, -0.17), 0.15);
+        d = opSmoothSubtraction(d1, d, 0.02);
+        d = smoothstep(0.0, AA, d);
+        col = mix(col, blackOutlineColor, 1.0 - d);
+        //////////////////
+        // color
+        //////////////////
+        // cranium circle
+        modP = vec2(origP.x, origP.y);
+        modP /= map(iVal, 0.0, totalI, maxScale, minScale);
+        d = sdCircle(modP - vec2(0.0, 0.1), 0.59);
+        d1 = sdBox(modP - vec2(0.07, 0.96), vec2(0.41, 0.13), -0.07);
+        d = opSmoothSubtraction(d1, d, 0.26);
+        // mandible box
+        d1 = sdBox(modP - vec2(0.0, -0.37), vec2(0.33, 0.33), 0.11);
+        d = opSmoothUnion(d, d1, 0.22);
+        // zygomatic indents
+        modP = vec2(p.x, p.y);
+        modP /= map(iVal, 0.0, totalI, maxScale, minScale);
+        d1 = sdCircle(modP - vec2(0.74, -0.5), 0.39);
+        d = opSmoothSubtraction(d1, d, 0.15);
+        // eye socket protrusions
+        d1 = sdRoundBox(modP - vec2(0.34, -0.22), vec2(0.22, 0.2), vec4(0.07, 0.11, 0.22, 0.22));
+        d = opSmoothUnion(d, d1, 0.04);
+        // zygomatic indents
+        d1 = sdCircle(modP - vec2(0.41, -0.46), 0.04);
+        d = opSmoothSubtraction(d1, d, 0.04);
+        // temple indents
+        d1 = sdCircle(modP - vec2(0.7, -0.17), 0.15);
+        d = opSmoothSubtraction(d1, d, 0.02);
+        d = smoothstep(0.0, AA, d);
+        col = mix(col, ansiGradient(iVal / totalI), 1.0 - d);
+    }
+    
+
+    
+
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
     
     /////////////////
     // blackbottom
@@ -514,6 +611,8 @@ void cranium(vec2 p, inout vec3 col, vec2 origP) {
     d = opSmoothSubtraction(d1, d, 0.02);
     d = smoothstep(0.0, AA, d);
     col = mix(col, blackOutlineColor, 1.0 - d);
+
+    
 
     ////////////////
     // color
@@ -578,7 +677,8 @@ void cranium(vec2 p, inout vec3 col, vec2 origP) {
     d1 = sdCircle(vec2(origP.x * -1.0, origP.y) - vec2(0.105, -0.22), 0.07);
     d = opSmoothSubtraction(d1, d, 0.04);
     d = smoothstep(0.0, AA, d);
-    col = mix(col, vec3(0.85,0.65,0.68), 1.0 - d);
+    mixedCol = mix(blackOutlineColor, vec3(0.85,0.65,0.68), smoothstep(-0.17, 0.43, length(vec2(p.x, p.y + 0.3))));
+    col = mix(col, mixedCol, 1.0 - d);
 
 
 
