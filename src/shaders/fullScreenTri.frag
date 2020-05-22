@@ -120,6 +120,7 @@ vec3 headGooColor = vec3(0.87,0.56,0.40);
 vec3 blackOutlineColor = vec3(0.23,0.24,0.21);
 vec3 gearCol1 = vec3(0.44,0.48,0.80);
 vec3 gearCol2 = vec3(0.36,0.83,0.99);
+vec3 blueColor = vec3(0.0, 0.0, 1.0);
 vec3 col = bgColor;
 float blackOutlineWidth = 0.02;
 vec3 mixedCol = vec3(0.0);
@@ -506,7 +507,8 @@ void eye(vec2 p, inout vec3 col, vec2 origP) {
     float loopTime = 0.0;
     float n = 0.0;
     float m = 0.0;
-
+    float mask = 0.0;
+    float sizeM = 0.0;
 
 
     ///////////////
@@ -515,24 +517,73 @@ void eye(vec2 p, inout vec3 col, vec2 origP) {
     // black bottom
     modP = rotate2d(0.74 * TAU) * origP;
     d = sdVesica(modP - vec2(0.0, 0.0), 0.7, 0.35);
-    d1 = sdCircle(origP - vec2(-0.59, 0.02), 0.02);
+    d1 = sdCircle(origP - vec2(-0.59, 0.03), 0.002);
+    d = opSmoothUnion(d, d1, 0.05);
+    d1 = sdCircle(origP - vec2(0.51, -0.11), 0.00);
     d = opSmoothUnion(d, d1, 0.15);
-    d1 = sdCircle(origP - vec2(0.51, -0.11), 0.11);
-    d = opSmoothUnion(d, d1, 0.15);
-
     d = smoothstep(0.0, AA, d);
     col = mix(col, blackOutlineColor, 1.0 - d);
+    // color ***** THIS IS WHERE THE EYE STUFF GOES
+    d = sdVesica(modP - vec2(0.0, 0.0), 0.68, 0.35);
+    d1 = sdCircle(origP - vec2(-0.55, 0.03), 0.002);
+    d = opSmoothUnion(d, d1, 0.05);
+    d1 = sdCircle(origP - vec2(0.51, -0.11), 0.00);
+    d = opSmoothUnion(d, d1, 0.15);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, bgColor, 1.0 - d);
 
     ///////////////
     // medial canthus
     //////////////
-    // d = sdCircle(origP - vec2(mod1, mod2), mod3);
-    // d = smoothstep(0.0, AA, d);
-    // col = mix(col, vec3(0.0, 0.0, 1.0), 1.0 - d);
-    d1 = sdSegment(vec2(mod4, mod5), vec2(mod6, mod7), vec2(mod8, mod9));
-    d1 = smoothstep(0.0, AA, d1);
-    col = mix(col, vec3(0.0, 0.0, 1.0), 1.0 - d1);
-    // d = opSmoothUnion(d, d1, 0.0001);
+    // black bottom
+    vec2 foo = vec2(0.0, 0.17);
+    d = sdCircle(origP - vec2(0.39, 0.09) + foo, 0.16);
+    d1 = sdSegment(origP, vec2(0.55, 0.11) - foo, vec2(0.66, 0.07) - foo) - 0.04;
+    d = opSmoothUnion(d, d1, 0.13);
+    d1 = sdCircle(origP - vec2(0.34, -0.02), 0.25);
+    d = opSmoothSubtraction(d1, d, 0.005);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    // color bottom
+    d = sdCircle(origP - vec2(0.39, 0.09) + foo, 0.15);
+    d1 = sdSegment(origP, vec2(0.55, 0.11) - foo, vec2(0.66, 0.07) - foo) - 0.03;
+    d = opSmoothUnion(d, d1, 0.13);
+    d1 = sdCircle(origP - vec2(0.36, -0.02), 0.24);
+    d = opSmoothSubtraction(d1, d, 0.005);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, bgColor, 1.0 - d);
+    mask = 1.0 - d;
+    // inside medial canthus black bottom
+    d = sdCircle(origP - vec2(0.39, 0.09) + foo, 0.15);
+    d1 = sdSegment(origP, vec2(0.55, 0.11) - foo, vec2(0.65, 0.075) - foo) - 0.03;
+    d = opSmoothUnion(d, d1, 0.13);
+    d1 = sdCircle(origP - vec2(0.36, -0.02), 0.24);
+    d = opSmoothSubtraction(d1, d, 0.005);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    mask = 1.0 - d;
+    // inside medial canthus color 
+    d = sdCircle(origP - vec2(0.39, 0.09) + foo, 0.13);
+    d1 = sdSegment(origP, vec2(0.55, 0.11) - foo, vec2(0.64, 0.075) - foo) - 0.03;
+    d = opSmoothUnion(d, d1, 0.13);
+    d1 = sdCircle(origP - vec2(0.36, -0.02), 0.25);
+    d = opSmoothSubtraction(d1, d, 0.005);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, bgColor, 1.0 - d);
+    mask = 1.0 - d;
+    // inside medial canthus black bottom
+    d = sdSegment(origP, vec2(0.17, -0.24), vec2(0.65, -0.09)) - 0.02;
+    d1 = sdCircle(origP - vec2(0.63, -0.165), 0.07);
+    d = opSmoothSubtraction(d1, d, 0.02);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, (1.0 - d) * mask);
+    // inside medial canthus color 
+    d = sdSegment(origP, vec2(0.17, -0.24), vec2(0.65, -0.09)) - 0.01;
+    d1 = sdCircle(origP - vec2(0.63, -0.165), 0.07);
+    d = opSmoothSubtraction(d1, d, 0.02);
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, bgColor, (1.0 - d) * mask);
+
 
 
     ///////////////
@@ -542,6 +593,64 @@ void eye(vec2 p, inout vec3 col, vec2 origP) {
     ///////////////
     // supratarsal creases
     //////////////
+    // template 1
+    // modP = within(origP, vec4(-0.6, 0.8, 0.6, -0.39) - vec4(0.11, -0.5, -0.07, -0.11));
+    // m = -(modP.x - 0.5) * (modP.x - 0.5);
+    // modP = vec2(modP.x, modP.y - m);
+    // sizeM = (1.0 - abs(modP.x * 2.0 - 1.0)) * 0.005;
+    // d = sdSegment(modP, vec2(0.0, 0.5), vec2(1.0, 0.5)) - sizeM;
+    // d = smoothstep(0.0, AA, d);
+    // col = mix(col, blackOutlineColor, 1.0 - d);
+    // addGrid(modP, col);
+
+    // template 2 
+    // goal sin wave shaping with variable stroke size
+    // modP = within(origP, vec4(-0.6, 0.8, 0.6, -0.39) - vec4(0.11, -0.5 + -0.43, -0.07, -0.11 + -0.43));
+    // m = sin(modP.x * 2.5 + 0.4) * 0.2;
+    // d = length(modP - vec2(modP.x, m));
+    // mask = step(0.0, modP.x) * step(modP.x, 1.0);
+    // n = 1.0 - abs(modP.x * 2.0 - 1.0); // stroke thicc
+    // d = smoothstep(0.002 * n, 0.008 * n, d);
+    // col = mix(col, blackOutlineColor, (1.0 - d) * mask);
+    // addGrid(modP, col);
+
+    // template 3
+    modP = within(origP, vec4(-0.7, 0.87, 0.78, -0.39));
+    sizeM = 0.005 * map(modP.x, 0.0, 1.0, -0.22, 0.41);
+    d = sdBezier(modP, vec2(0.02, 0.45), vec2(0.53, 0.89), vec2(0.87, 0.44)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    modP = within(origP, vec4(-0.7, 0.77, 0.78, -0.49));
+    sizeM = 0.01 * map(modP.x, 0.0, 1.0, -0.63, 0.65);
+    d = sdBezier(modP, vec2(0.3, 0.67), vec2(0.48, 0.76), vec2(0.65, 0.66)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    modP = within(origP, vec4(-0.7, 0.77, 0.78, -0.49));
+    sizeM = 0.01 * map(modP.x, 0.0, 1.0, -1.0, 0.26);
+    d = sdBezier(modP, vec2(0.89, 0.39), vec2(0.78, 0.59), vec2(0.67, 0.63)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    // addGrid(modP, col);
+
+    modP = within(origP, vec4(-0.21, 0.8, 0.3, 0.15));
+    sizeM = 0.005 * modP.x;
+    d = sdBezier(modP, vec2(0.33, 0.57), vec2(0.54, 0.61), vec2(0.74, 0.54)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    modP = within(origP, vec4(-1.0, 0.13, -0.35, 0.74));
+    sizeM = 0.005 * modP.x;
+    d = sdBezier(modP, vec2(0.33, 0.57), vec2(0.54, 0.61), vec2(0.74, 0.54)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    
+    modP = within(origP, vec4(-1.5, 0.87, 0.11, -0.07));
+    sizeM = 0.005 * map(modP.x, 0.0, 1.0, -0.61, 0.5);
+    d = sdBezier(modP, vec2(0.24, 0.39), vec2(0.39, 0.26), vec2(0.67, 0.5)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
 
     ///////////////
     // lashes
