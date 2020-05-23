@@ -708,6 +708,8 @@ void eye(vec2 p, inout vec3 col, vec2 origP) {
     ///////////////
     // lashes
     //////////////
+    // TOP
+    ////////////////
     modP = vec2(origP.x, origP.y);
 
     sizeM = 0.005 * map(modP.x, -0.41 * 2.0, -0.33 * 2.0, 0.0, 1.0);
@@ -1049,6 +1051,161 @@ void eye(vec2 p, inout vec3 col, vec2 origP) {
     sizeM = 0.005 * map(modP.x,0.33 * 2.0, 0.28 * 2.0, 0.0, 1.0);
     // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
     d = sdBezier(modP, vec2(0.56, 0.05), vec2(0.62, 0.03), vec2(0.72, 0.08)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    ///////////////
+    // lashes
+    //////////////
+    // BOTTOM
+    ////////////////
+    sizeM = 0.005 * map(modP.x, -0.46 * 2.0, -0.3 * 2.0, 0.0, 1.0);
+    // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
+    d = sdBezier(modP, vec2(-0.59, 0.0), vec2(-0.63, 0.04), vec2(-0.74, -0.07)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    sizeM = 0.005 * map(modP.x, -0.37 * 2.0, -0.33 * 2.0, 0.0, 1.0);
+    // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
+    d = sdBezier(modP, vec2(-0.57, -0.04), vec2(-0.67, -0.04), vec2(-0.7, -0.17)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    sizeM = 0.005 * map(modP.x, -0.33 * 2.0, -0.02 * 2.0, 0.0, 1.0);
+    // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
+    d = sdBezier(modP, vec2(-0.52, -0.09), vec2(-0.61, -0.07), vec2(-0.65, -0.11)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    sizeM = 0.005 * map(modP.x, -0.35 * 2.0, -0.28 * 2.0, 0.0, 1.0);
+    // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
+    d = sdBezier(modP, vec2(-0.5, -0.11), vec2(-0.61, -0.07), vec2(-0.63, -0.22)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    sizeM = 0.005 * map(modP.x, -0.33 * 2.0, -0.28 * 2.0, 0.0, 1.0);
+    // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
+    d = sdBezier(modP, vec2(-0.48, -0.15), vec2(-0.54, -0.11), vec2(-0.59, -0.22)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    sizeM = 0.005 * map(modP.x, -0.33 * 2.0, -0.28 * 2.0, 0.0, 1.0);
+    // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
+    d = sdBezier(modP, vec2(-0.46, -0.18), vec2(-0.59, -0.13), vec2(-0.59, -0.33)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    sizeM = 0.005 * map(modP.x, -0.33 * 2.0, -0.28 * 2.0, 0.0, 1.0);
+    // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
+    d = sdBezier(modP, vec2(-0.42, -0.22), vec2(-0.52, -0.15), vec2(-0.61, -0.3)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    sizeM = 0.005 * map(modP.x, -0.28 * 2.0, -0.24 * 2.0, 0.0, 1.0);
+    // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
+    d = sdBezier(modP, vec2(-0.40, -0.24), vec2(-0.5, -0.22), vec2(-0.54, -0.33)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    sizeM = 0.005 * map(modP.y, -0.24 * 2.0, -0.07 * 2.0, 0.0, 1.0);
+    // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
+    d = sdBezier(modP, vec2(-0.41, -0.25), vec2(-0.46, -0.24), vec2(-0.5, -0.35)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    sizeM = 0.005 * map(modP.y, -0.24 * 2.0, -0.07 * 2.0, 0.0, 1.0);
+    // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
+    d = sdBezier(modP, vec2(-0.36, -0.26), vec2(-0.43, -0.22), vec2(-0.48, -0.39)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    sizeM = 0.005 * map(modP.y, -0.24 * 2.0, -0.07 * 2.0, 0.0, 1.0);
+    // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
+    d = sdBezier(modP, vec2(-0.34, -0.28), vec2(-0.41, -0.28), vec2(-0.5, -0.39)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    sizeM = 0.005 * map(modP.y, -0.28 * 2.0, -0.22 * 2.0, 0.0, 1.0);
+    // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
+    d = sdBezier(modP, vec2(0.07, -0.38), vec2(0.04, -0.41), vec2(0.07, -0.48)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    sizeM = 0.005 * map(modP.y, -0.28 * 2.0, -0.22 * 2.0, 0.0, 1.0);
+    // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
+    d = sdBezier(modP, vec2(0.09, -0.37), vec2(0.12, -0.39), vec2(0.09, -0.50)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    sizeM = 0.005 * map(modP.y, -0.24 * 2.0, -0.07 * 2.0, 0.0, 1.0);
+    // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
+    d = sdBezier(modP, vec2(-0.28, -0.30), vec2(-0.37, -0.26), vec2(-0.41, -0.39)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    sizeM = 0.005 * map(modP.y, -0.24 * 2.0, -0.07 * 2.0, 0.0, 1.0);
+    // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
+    d = sdBezier(modP, vec2(-0.26, -0.31), vec2(-0.37, -0.28), vec2(-0.37, -0.41)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    sizeM = 0.005 * map(modP.y, -0.24 * 2.0, -0.07 * 2.0, 0.0, 1.0);
+    // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
+    d = sdBezier(modP, vec2(-0.24, -0.33), vec2(-0.3, -0.28), vec2(-0.39, -0.39)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    sizeM = 0.005 * map(modP.y, -0.24 * 2.0, -0.07 * 2.0, 0.0, 1.0);
+    // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
+    d = sdBezier(modP, vec2(-0.24, -0.34), vec2(-0.33, -0.3), vec2(-0.33, -0.43)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    sizeM = 0.005 * map(modP.y, -0.24 * 2.0, -0.07 * 2.0, 0.0, 1.0);
+    // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
+    d = sdBezier(modP, vec2(-0.22, -0.35), vec2(-0.3, -0.33), vec2(-0.3, -0.41)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    sizeM = 0.005 * map(modP.y, -0.24 * 2.0, -0.07 * 2.0, 0.0, 1.0);
+    // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
+    d = sdBezier(modP, vec2(-0.2, -0.37), vec2(-0.27, -0.3), vec2(-0.28, -0.46)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    sizeM = 0.005 * map(modP.y, -0.26 * 2.0, -0.2 * 2.0, 0.0, 1.0);
+    // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
+    d = sdBezier(modP, vec2(-0.17, -0.37), vec2(-0.24, -0.33), vec2(-0.24, -0.5)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    sizeM = 0.005 * map(modP.y, -0.26 * 2.0, -0.2 * 2.0, 0.0, 1.0);
+    // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
+    d = sdBezier(modP, vec2(-0.15, -0.39), vec2(-0.2, -0.35), vec2(-0.2, -0.48)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    sizeM = 0.005 * map(modP.y, -0.26 * 2.0, -0.2 * 2.0, 0.0, 1.0);
+    // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
+    d = sdBezier(modP, vec2(-0.11, -0.39), vec2(-0.2, -0.41), vec2(-0.15, -0.54)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    sizeM = 0.005 * map(modP.y, -0.26 * 2.0, -0.2 * 2.0, 0.0, 1.0);
+    // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
+    d = sdBezier(modP, vec2(-0.09, -0.41), vec2(-0.15, -0.41), vec2(-0.13, -0.52)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    sizeM = 0.005 * map(modP.y, -0.26 * 2.0, -0.2 * 2.0, 0.0, 1.0);
+    // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
+    d = sdBezier(modP, vec2(-0.04, -0.41), vec2(-0.11, -0.43), vec2(-0.09, -0.52)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    sizeM = 0.005 * map(modP.y, -0.26 * 2.0, -0.2 * 2.0, 0.0, 1.0);
+    // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
+    d = sdBezier(modP, vec2(-0.04, -0.41), vec2(-0.11, -0.43), vec2(-0.09, -0.52)) - sizeM;
     d = smoothstep(0.0, AA, d);
     col = mix(col, blackOutlineColor, 1.0 - d);
 
