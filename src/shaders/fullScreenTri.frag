@@ -514,7 +514,7 @@ void eye(vec2 p, inout vec3 col, vec2 origP) {
     // grid bottom
     //////////////
     modP = vec2(origP.x, origP.y);
-    d = length(modP);
+    d = length(modP) * abs(origP.y * origP.y);
     col = mix(col, blackOutlineColor, d);
 
     ///////////////
