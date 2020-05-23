@@ -510,6 +510,12 @@ void eye(vec2 p, inout vec3 col, vec2 origP) {
     float mask = 0.0;
     float sizeM = 0.0;
 
+    ///////////////
+    // grid bottom
+    //////////////
+    modP = vec2(origP.x, origP.y);
+    d = length(modP);
+    col = mix(col, blackOutlineColor, d);
 
     ///////////////
     // sclera
@@ -531,6 +537,22 @@ void eye(vec2 p, inout vec3 col, vec2 origP) {
     d = opSmoothUnion(d, d1, 0.15);
     d = smoothstep(0.0, AA, d);
     col = mix(col, bgColor, 1.0 - d);
+
+    // sclera shading
+    d1 = 1.0 - (sdVesica(modP - vec2(0.0), 0.68, 0.35));
+    d1 = smoothstep(0.26 * 3.0, 1.0 * 8.0, d1);
+    d = smoothstep(0.0, AA, d + d1);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    ///////////
+    // pupil
+    ///////////
+    modP = within(vec2(origP.x, origP.y), vec4(-0.02, 0.72, 1.0, -0.07));
+    // addGrid(modP, col);
+    d1 = sdCircle(modP - vec2(-0.02, 0.04),0.2);
+    d = smoothstep(0.0, AA, d1);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    
 
     ///////////////
     // medial canthus
