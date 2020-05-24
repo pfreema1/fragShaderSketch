@@ -13,9 +13,45 @@ uniform float mod9;
 
 /*
     -sdf functions from iq   
-    
+    -matrix looking thingies from here:  https://thebookofshaders.com/edit.php#08/matrix.frag
 
 */
+
+float random(in float x){
+    return fract(sin(x)*43758.5453);
+}
+
+
+//https://thebookofshaders.com/edit.php#08/matrix.frag
+float random(in vec2 st){
+    return fract(sin(dot(st.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
+float rchar(in vec2 outer,in vec2 inner){
+    float grid = 5.;
+    vec2 margin = vec2(.2,.05);
+    float seed = 23.;
+    vec2 borders = step(margin,inner)*step(margin,1.-inner);
+    return step(.5,random(outer*seed+floor(inner*grid))) * borders.x * borders.y;
+}
+
+vec3 matrix(in vec2 st){
+    float rows = 80.0;
+    vec2 ipos = floor(st*rows);
+
+    ipos += vec2(.0,floor(iTime*20.*random(ipos.x)));
+
+
+    vec2 fpos = fract(st*rows);
+    vec2 center = (.5-fpos);
+
+    float pct = random(ipos);
+    float glow = (1.-dot(center,center)*3.)*2.0;
+
+    // vec3 color = vec3(0.643,0.851,0.690) * ( rchar(ipos,fpos) * pct );
+    // color +=  vec3(0.027,0.180,0.063) * pct * glow;
+    return vec3(rchar(ipos,fpos) * pct * glow);
+}
 
 // https://www.shadertoy.com/view/MsjXRt
 vec4 HueShift (in vec3 Color, in float Shift)
@@ -388,6 +424,40 @@ float sdUnevenCapsule( vec2 p, float r1, float r2, float h )
     return dot(p, vec2(a,b) ) - r1;
 }
 
+float sdEllipse( in vec2 p, in vec2 ab )
+{
+    p = abs(p); if( p.x > p.y ) {p=p.yx;ab=ab.yx;}
+    float l = ab.y*ab.y - ab.x*ab.x;
+    float m = ab.x*p.x/l;      float m2 = m*m; 
+    float n = ab.y*p.y/l;      float n2 = n*n; 
+    float c = (m2+n2-1.0)/3.0; float c3 = c*c*c;
+    float q = c3 + m2*n2*2.0;
+    float d = c3 + m2*n2;
+    float g = m + m*n2;
+    float co;
+    if( d<0.0 )
+    {
+        float h = acos(q/c3)/3.0;
+        float s = cos(h);
+        float t = sin(h)*sqrt(3.0);
+        float rx = sqrt( -c*(s + t + 2.0) + m2 );
+        float ry = sqrt( -c*(s - t + 2.0) + m2 );
+        co = (ry+sign(l)*rx+abs(g)/(rx*ry)- m)/2.0;
+    }
+    else
+    {
+        float h = 2.0*m*n*sqrt( d );
+        float s = sign(q+h)*pow(abs(q+h), 1.0/3.0);
+        float u = sign(q-h)*pow(abs(q-h), 1.0/3.0);
+        float rx = -s - u - c*4.0 + 2.0*m2;
+        float ry = (s - u)*sqrt(3.0);
+        float rm = sqrt( rx*rx + ry*ry );
+        co = (ry/sqrt(rm-rx)+2.0*g/rm-m)/2.0;
+    }
+    vec2 r = ab * vec2(co, sqrt(1.0-co*co));
+    return length(r-p) * sign(p.y-r.y);
+}
+
 float opSmoothSubtraction( float d1, float d2, float k ) {
     float h = clamp( 0.5 - 0.5*(d2+d1)/k, 0.0, 1.0 );
     return mix( d2, -d1, h ) + k*h*(1.0-h); 
@@ -508,14 +578,44 @@ void eye(vec2 p, inout vec3 col, vec2 origP) {
     float n = 0.0;
     float m = 0.0;
     float mask = 0.0;
+    float mask2 = 0.0;
     float sizeM = 0.0;
 
+    // background matrix
+    modP = vec2(origP.x, origP.y);
+    d = length(modP);
+    modP *= smoothstep(-1.0 * 2.0, 1.0 * 2.0, d); // this is where roundness is set!
+    col = mix(col, blackOutlineColor, matrix(modP).r * 0.2);
+
     ///////////////
-    // grid bottom
+    // background shading
     //////////////
+    // top and bottom shadow
     modP = vec2(origP.x, origP.y);
     d = length(modP) * abs(origP.y * origP.y);
     col = mix(col, blackOutlineColor, d);
+    // top nose shading
+    d = sdBezier(origP, vec2(0.43, 0.61), vec2(0.89, 0.46), vec2(0.89, -0.24)) - 0.5;
+    d = smoothstep(-0.83 * 2.0, 0.22 * 2.0, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    // more top nose
+    d = sdBezier(origP, vec2(0.63, 0.26), vec2(0.76, 0.15), vec2(0.76, 0.02)) - 0.04;
+    d = smoothstep(-0.22 * 2.0, 0.24 * 2.0, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    // left side fall off
+    // m = origP.x + sin(origP.y * 2.8 + 2.8) * 0.01;
+    // d = smoothstep(-0.44 * 2.0, -0.38 * 2.0, m);
+    // col = mix(col, blackOutlineColor, 1.0 - d);
+    // supraorbital margin
+    d = sdBezier(origP, vec2(-0.35, 0.39), vec2(-0.72, 0.26), vec2(-0.74, 0.15)) - 0.02;
+    d = smoothstep(-0.17 * 2.0, 0.26 * 2.0, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+    // bottom eyelid
+    d = sdBezier(origP, vec2(0.63, -0.22), vec2(-0.24, -0.74), vec2(-0.59, -0.15)) - 0.02;
+    d = smoothstep(-0.17 * 2.0, 0.17 * 2.0, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
 
     ///////////////
     // sclera
@@ -528,30 +628,91 @@ void eye(vec2 p, inout vec3 col, vec2 origP) {
     d1 = sdCircle(origP - vec2(0.51, -0.11), 0.00);
     d = opSmoothUnion(d, d1, 0.15);
     d = smoothstep(0.0, AA, d);
+    mask2 = d;
     col = mix(col, blackOutlineColor, 1.0 - d);
+
+
+    // facial lines
+    // modP = vec2(origP.x, origP.y);
+    // d = abs(modP.y);
+    // d = smoothstep(0.0, 0.1, d);
+    // col = mix(col, blackOutlineColor, (1.0 - d) * mask2);
+
+
     // color ***** THIS IS WHERE THE EYE STUFF GOES
     d = sdVesica(modP - vec2(0.0, 0.0), 0.68, 0.35);
     d1 = sdCircle(origP - vec2(-0.55, 0.03), 0.002);
     d = opSmoothUnion(d, d1, 0.05);
     d1 = sdCircle(origP - vec2(0.51, -0.11), 0.00);
     d = opSmoothUnion(d, d1, 0.15);
+    mask = d;
     d = smoothstep(0.0, AA, d);
     col = mix(col, bgColor, 1.0 - d);
 
-    // sclera shading
+    // matrix on sclera
+    if(mask < 0.004) {
+        modP = vec2(origP.x, origP.y);
+        d = length(modP);
+        modP *= smoothstep(-0.87 * 2.0, 1.0 * 2.0, d); // this is where roundness is set!
+        col = mix(col, blackOutlineColor, matrix(modP).r);
+
+        modP = vec2(origP.x, origP.y);
+        d = length(modP);
+        modP *= smoothstep(-0.87 * 2.0, 1.0 * 2.0, d); // this is where roundness is set!
+        d = sdCircle(modP - vec2(0.07, 0.11), 0.04);
+        d = smoothstep(mod1, mod2, d);
+        col = mix(col, vec3(1.0), 1.0 - d);
+
+        // lines
+        // modP = vec2(origP.x, origP.y);
+        // modP.y += sin(iTime * 4.0) * 0.3;
+        // modP *= smoothstep(-0.46 * 3.0, 1.0 * 3.0, length(modP));
+        // d = length(modP.y);
+        // d = smoothstep(0.0, 0.002, d);
+        // col = mix(col, blackOutlineColor, 1.0 - d);
+
+        // inner sclera shading
+        d = smoothstep(0.13, -0.15, mask);
+        col = mix(col, blackOutlineColor, 1.0 - d);
+
+        // pupil
+        // modP = vec2(origP.x, origP.y);
+        // d = sdEllipse(modP - vec2(mod1, mod2), vec2(mod3, mod4)) - mod5;
+        // d = smoothstep(0.0, AA, d);
+        // col = mix(col, blackOutlineColor, 1.0 - d);
+        /*
+        // setup sclera bg shading
+        m = smoothstep(0.2, 0.4, length(vec2(origP.x / 2.0, origP.y / 1.2)));
+        // top sclera darkness
+        m += smoothstep(0.2, 0.52, length(origP.y)) * step(0.0, origP.y);
+        // left/right sclera darkness
+        m += smoothstep(-0.15, 0.7, length(origP.x * origP.x)) * origP.y;
+        
+        
+        mixedCol = mix(col, blackOutlineColor, m);
+        col = mix(col, mixedCol, 1.0 - d);
+        */
+    }
+
+
+
+    
+
+    // surrounding eye shading
     d1 = 1.0 - (sdVesica(modP - vec2(0.0), 0.68, 0.35));
     d1 = smoothstep(0.26 * 3.0, 1.0 * 8.0, d1);
-    d = smoothstep(0.0, AA, d + d1);
-    col = mix(col, blackOutlineColor, 1.0 - d);
+    d = smoothstep(0.0, AA, d1);
+    col = mix(col, blackOutlineColor, (d * mask2));
 
     ///////////
     // pupil
     ///////////
-    modP = within(vec2(origP.x, origP.y), vec4(-0.02, 0.72, 1.0, -0.07));
-    // addGrid(modP, col);
-    d1 = sdCircle(modP - vec2(-0.02, 0.04),0.2);
-    d = smoothstep(0.0, AA, d1);
-    col = mix(col, blackOutlineColor, 1.0 - d);
+    // modP = within(vec2(origP.x, origP.y), vec4(-0.02, 0.72, 1.0, -0.07));
+    // d1 = sdEllipse(modP - vec2(-0.02, 0.04), vec2(0.24, 0.26));
+    // d = smoothstep(0.0, AA, d1);
+    // col = mix(col, blackOutlineColor, 1.0 - d);
+
+    // pupil lines
     
 
     ///////////////
@@ -639,7 +800,19 @@ void eye(vec2 p, inout vec3 col, vec2 origP) {
     // template 3
     modP = within(origP, vec4(-0.7, 0.87, 0.78, -0.39));
     sizeM = 0.005 * map(modP.x, 0.0, 1.0, -0.22, 0.41);
-    d = sdBezier(modP, vec2(0.02, 0.45), vec2(0.53, 0.89), vec2(0.87, 0.44)) - sizeM;
+    d = sdBezier(modP, vec2(0.02, 0.35), vec2(0.43, 0.93), vec2(0.87, 0.34)) - sizeM;
+    d = smoothstep(-0.02, 0.04, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    modP = within(origP, vec4(-0.7, 0.87 - -0.02, 0.78, -0.39 - -0.02));
+    sizeM = 0.005 * map(modP.x, 0.0, 1.0, -0.22, 0.41);
+    d = sdBezier(modP, vec2(0.02, 0.35), vec2(0.43, 0.93), vec2(0.87, 0.34)) - sizeM;
+    d = smoothstep(0.0, AA, d);
+    col = mix(col, blackOutlineColor, 1.0 - d);
+
+    modP = within(origP, vec4(-0.7, -0.39 - 0.63, 0.78, 0.87 - 0.63));
+    sizeM = 0.005 * map(modP.x, 0.0, 1.0, -0.22, 0.41);
+    d = sdBezier(modP, vec2(0.02, 0.25), vec2(0.38, 0.8), vec2(0.87, 0.36)) - sizeM;
     d = smoothstep(0.0, AA, d);
     col = mix(col, blackOutlineColor, 1.0 - d);
 
@@ -733,6 +906,7 @@ void eye(vec2 p, inout vec3 col, vec2 origP) {
     // TOP
     ////////////////
     modP = vec2(origP.x, origP.y);
+    modP.y +=  -0.02;
 
     sizeM = 0.005 * map(modP.x, -0.41 * 2.0, -0.33 * 2.0, 0.0, 1.0);
     // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
@@ -1081,6 +1255,7 @@ void eye(vec2 p, inout vec3 col, vec2 origP) {
     //////////////
     // BOTTOM
     ////////////////
+    modP.y -= -0.03;
     sizeM = 0.005 * map(modP.x, -0.46 * 2.0, -0.3 * 2.0, 0.0, 1.0);
     // d = sdBezier(modP, vec2(mod1, mod2), vec2(mod3, mod4), vec2(mod5, mod6)) - sizeM;
     d = sdBezier(modP, vec2(-0.59, 0.0), vec2(-0.63, 0.04), vec2(-0.74, -0.07)) - sizeM;
